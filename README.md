@@ -1,2 +1,2 @@
-# 1-1-pacman-project
+# 1-1-game-project
 
