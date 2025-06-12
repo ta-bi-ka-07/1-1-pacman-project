@@ -29,11 +29,14 @@ void drawMenuPage();
 void gameState();
 
 bool menuMusicON = true;
+bool level12MusicON = false;
+bool level3MusicON = false;
 
  //void drawHighScore();
 void drawLevel1();
  void drawLevel2();
  void drawLevel3();
+void switchMusic();
 // void pauseGame();
 // void resumeGame();
  //void drawMaze();
@@ -41,7 +44,7 @@ void drawLevel1();
 // void drawBalls();
 void pacmanMoveRight();
 void pacmanMoveLeft();
- void pacmanMoveUp();
+void pacmanMoveUp();
 void pacmanMoveDown();
 
 void ghostMoveRight();
@@ -51,7 +54,7 @@ void ghostMoveDown();
 
 
 void pacmanMove();
- void ghostMove();
+void ghostMove();
 void collisionDetection();
 
 
@@ -219,8 +222,6 @@ if (homepage)
      else if(level1page)
 
      {
-
-     
         drawLevel1();
         pacmanMove();
      }
@@ -234,6 +235,7 @@ if (homepage)
         drawLevel3();
         pacmanMove();
      }
+
     // {
     //     // Draw the game elements
     //     drawMaze();
@@ -241,7 +243,7 @@ if (homepage)
     //     drawGhosts();
     //     drawBalls();
         // Add other game elements as needed
-    }
+}
 
     // Add any other drawing functions here
 
@@ -404,17 +406,22 @@ void iMouse(int button, int state, int mx, int my)
         else if (mx >= 98 && mx <= 282 && my >= 396 && my <= 454 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
             level1page = 1;
+            switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 295 && my <= 355 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
             level2page = 1;
+            switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 197 && my <= 255 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
             level3page = 1;
+            switchMusic();
         }
     }
-    
+       
+
+
 }
 
 /*
@@ -466,6 +473,9 @@ void iKeyboard(unsigned char key)
             level3page = 0;
             levelSelectionPage = 1;
         }
+        if (!(menuMusicON) && (menuPage || homepage || levelSelectionPage))
+            switchMusic();
+        
 
      
         break;
@@ -476,7 +486,9 @@ void iKeyboard(unsigned char key)
             gamestate = menu;
         previousState = paused; // Save the previous state
         menuPage = 1; // Set homepage to active
-        gamePage = 0; // Set game page to inactive
+        gamePage = 0;
+        if (!(menuMusicON))
+            switchMusic(); // Set game page to inactive
         buttons(); 
         gameState(); // Draw the menu page
         break;
@@ -488,7 +500,9 @@ void iKeyboard(unsigned char key)
         previousState = paused; // Save the previous state
         menuPage = 0; // Set homepage to active
         gamePage = 0; // Set game page to inactive
-        homepage = 1; // Set homepage to active
+        homepage = 1;
+        if (!(menuMusicON))
+            switchMusic(); // Set homepage to active
         buttons();
         break;
         }
@@ -559,37 +573,38 @@ void iSpecialKeyboard(unsigned char key)
         break;
     }
     // place your codes for other keys here
-    case GLUT_KEY_RIGHT:
-     if(level1page==1|level2page==1|level3page==1)
-     {
-        pacmanMoveRight();
-        break;
+    // case GLUT_KEY_RIGHT:
+    //  if(level1page==1|level2page==1|level3page==1)
+    //  {
+    //     pacmanMoveRight();
+    //     break;
         
-     }
+    //  }
      
-    case GLUT_KEY_LEFT:
-     if(level1page==1|level2page==1|level3page==1)
-     {
-        pacmanMoveLeft();
-        break;
-     }
-     case GLUT_KEY_UP:
-     if(level1page==1|level2page==1|level3page==1)
-     {
-        pacmanMoveUp();
-        break;
-     }
-     case GLUT_KEY_DOWN:
-     if(level1page==1|level2page==1|level3page==1)
-     {
-        pacmanMoveDown();
-        break;
-     }
+    // case GLUT_KEY_LEFT:
+    //  if(level1page==1|level2page==1|level3page==1)
+    //  {
+    //     pacmanMoveLeft();
+    //     break;
+    //  }
+    //  case GLUT_KEY_UP:
+    //  if(level1page==1|level2page==1|level3page==1)
+    //  {
+    //     pacmanMoveUp();
+    //     break;
+    //  }
+    //  case GLUT_KEY_DOWN:
+    //  if(level1page==1|level2page==1|level3page==1)
+    //  {
+    //     pacmanMoveDown();
+    //     break;
+    //  }
     
-    default:
-        break;
+    // default:
+    //     break;
     }
 }
+
 
 void iLoadImages()
 {
@@ -598,6 +613,7 @@ void iLoadImages()
 // Example: iLoadImage("", "myImage");
 // If you want to use iShowBMP, you don't need to load the image beforehand.
 }
+
 
 void gameState()
 {
@@ -796,7 +812,6 @@ void buttons()
 
 void drawLevel1()
 {
-    
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
     iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\base.png"); // Draw Pacman at the current position
@@ -904,6 +919,30 @@ void drawLevel3()
                 iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
             }
         }
+    }
+}
+
+void switchMusic(){
+    // Always stop current music first
+    PlaySound(0, 0, 0);
+    
+    // Reset all music flags
+    menuMusicON = false;
+    level12MusicON = false;
+    level3MusicON = false;
+    
+    // Determine which music to play based on current page
+    if (menuPage || homepage || levelSelectionPage){
+        menuMusicON = true;
+        PlaySound("E:\\1-1-pacman-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
+    }
+    else if (level1page || level2page){
+        level12MusicON = true;
+        PlaySound("E:\\1-1-pacman-project\\music\\level12music.wav", NULL, SND_LOOP | SND_ASYNC);
+    }
+    else if (level3page){
+        level3MusicON = true;
+        PlaySound("E:\\1-1-pacman-project\\music\\level3music.wav", NULL, SND_LOOP | SND_ASYNC);
     }
 }
 
@@ -1082,7 +1121,6 @@ void drawExit()
 
 int main(int argc, char *argv[])
 {
-
     PlaySound("E:\\1-1-pacman-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
     glutInit(&argc, argv);
     // place your own initialization codes here.
