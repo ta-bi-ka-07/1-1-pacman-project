@@ -3,8 +3,8 @@
 //gamepage diye gamestate page open hobe,pause
 
 #include "iGraphics.h"
-
-#include<windows.h>
+#include <string.h>
+#include <windows.h>
 
 
 #define screenWidth 1000
@@ -22,6 +22,7 @@ void drawGamePage();
 void buttons();
 void drawExit();
 void drawLevelSelectionPage();
+void drawEnterNamePage();
 
 void drawInstructions();
 void drawAbout();
@@ -67,6 +68,7 @@ int instructionsPage;
 int exitPage;
 int highScorePage;
 int menuPage;
+int EnterNamePage;
 int levelSelectionPage;
 int level1page;
 int level2page;
@@ -88,6 +90,16 @@ int pacmanY = cellheight + cellheight/2; // Initial Y position of Pacman
 /*
 function iDraw() is called again and again by the system.
 */
+char playerName[25] = "";
+int namelength = 0;
+bool TextInputActive = true;
+int inputBoxX = 373;
+int inputBoxY = 221;
+int inputBoxWidth = 337;
+int inputBoxHeight = 30;
+
+
+
 int mouthOpen;
 int mouthClose;
 
@@ -215,6 +227,9 @@ if (homepage)
     else if (exitPage)
     {
         drawExit();
+    }
+    else if (EnterNamePage){
+        drawEnterNamePage();
     }
     else if (levelSelectionPage){
         drawLevelSelectionPage();
@@ -358,7 +373,8 @@ void iMouse(int button, int state, int mx, int my)
             if (mx>=92 && mx<=345 && my>=445 && my<=500 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             menuPage = 0;
-            levelSelectionPage = 1;
+            EnterNamePage = 1;
+            TextInputActive = true;
             buttons();
             // menuPage=0;
             // gamePage = 1; 
@@ -444,8 +460,7 @@ void iKeyboard(unsigned char key)
     
     switch (key)
     {
-    case 'q':
-    case 'Q':
+    case 27:
     {
         if (homepage == 1){
             gamestate = menu;
@@ -458,6 +473,10 @@ void iKeyboard(unsigned char key)
             instructionsPage = 0;
             menuPage = 0;
             homepage = 1;
+        }
+        else if (EnterNamePage){
+            EnterNamePage = 0;
+            menuPage = 1;
         }
         else if (levelSelectionPage == 1){
             menuPage = 1;
@@ -480,35 +499,47 @@ void iKeyboard(unsigned char key)
      
         break;
     }
+
         case 'm':
         case 'M':
-        {
-            gamestate = menu;
-        previousState = paused; // Save the previous state
-        menuPage = 1; // Set homepage to active
-        gamePage = 0;
-        if (!(menuMusicON))
-            switchMusic(); // Set game page to inactive
-        buttons(); 
-        gameState(); // Draw the menu page
-        break;
+        {   
+            if (EnterNamePage == 0){
+                gamestate = menu;
+                previousState = paused; // Save the previous state
+                menuPage = 1; // Set homepage to active
+                gamePage = 0;
+                if (!(menuMusicON))
+                    switchMusic();
+                    
+                buttons(); 
+                gameState(); // Draw the menu page
+                break;
+            }
+            else 
+                break;
         }
         case 'h':
         case 'H':
         {
-            gamestate = menu;
-        previousState = paused; // Save the previous state
-        menuPage = 0; // Set homepage to active
-        gamePage = 0; // Set game page to inactive
-        homepage = 1;
-        if (!(menuMusicON))
-            switchMusic(); // Set homepage to active
-        buttons();
-        break;
+            if (EnterNamePage == 0){
+                gamestate = menu;
+                previousState = paused; // Save the previous state
+                menuPage = 0; // Set homepage to active
+                gamePage = 0; // Set game page to inactive
+                homepage = 1;
+                if (!(menuMusicON))
+                    switchMusic(); // Set homepage to active
+                buttons();
+                break;
+            }
+            else
+                break;     
         }
-    case 'p':
-    case 'P':
-        {
+
+        case 'p':
+        case 'P':
+        {   
+            if (level1page || level2page || level3page){
             if (gamestate == running)
             {
                 gamestate = paused; 
@@ -516,33 +547,65 @@ void iKeyboard(unsigned char key)
                 gameState(); // Draw the paused state
                 
             }
-         break;
+            break;
+            }  
         }
-    case 'r':
-    case 'R':
-        {
-            if (gamestate == paused)
-            {
-                gamestate = previousState; // Resume the game from the previous state
-                gamePage = 1; // Set game page to active
-                buttons(); // Draw buttons on the homepage
-                gameState(); // Draw the game page
+        case 'r':
+        case 'R':
+        {   
+            if (menuPage){
+                if (gamestate == paused)
+                {
+                    gamestate = previousState; // Resume the game from the previous state
+                    gamePage = 1; // Set game page to active
+                    buttons(); // Draw buttons on the homepage
+                    gameState(); // Draw the game page
+                }
+                else if (gamestate == menu)
+                {
+                    gamestate = running; // Resume the game from menu
+                    gamePage = 1; // Set game page to active
+                    buttons(); // Draw buttons on the homepage
+                    gameState(); // Draw the game page
+                }
             }
-            else if (gamestate == menu)
-            {
-                gamestate = running; // Resume the game from menu
-                gamePage = 1; // Set game page to active
-                buttons(); // Draw buttons on the homepage
-                gameState(); // Draw the game page
-            }
-         // Resume the game
         
-         break;
+            break;
         }
+    
     // place your codes for other keys here
-    default:
-        break;
+        default:
+            break;
     }
+    if (EnterNamePage){
+        if (TextInputActive){
+            if (key == '\r' || key == '\n'){ //Enter key
+                if (namelength > 0){
+                    TextInputActive = false;
+                    printf("Player Name %s", playerName);
+                    EnterNamePage = 0;
+                    levelSelectionPage = 1;
+                }
+            }
+            else if (key == '\b' && namelength > 0){ //backspace
+                namelength--;
+                playerName[namelength] = '\0';
+            }
+            else if (key >= 32 && key <= 126 && namelength < 15) {  // Printable characters
+            // Only allow letters, numbers, and some symbols
+                if ((key >= 'A' && key <= 'Z') || 
+                    (key >= 'a' && key <= 'z') || 
+                    (key >= '0' && key <= '9') || 
+                    key == ' ' || key == '_' || key == '-'){
+                        playerName[namelength] = key;
+                        namelength++;
+                        playerName[namelength] = '\0';
+                }
+                
+            }
+        }
+    }
+        
 }
 
 /*
@@ -743,6 +806,21 @@ void buttons()
 
         gamePage=0;
         highScorePage=0;
+        iDraw();
+    }
+    else if (EnterNamePage){
+        homepage = 0;
+        levelSelectionPage = 0;
+        menuPage=0;
+        aboutPage=0;
+        instructionsPage=0;
+        level1page = 0;
+        level2page = 0;
+        level3page = 0;
+        gamePage=0;
+        highScorePage=0;
+        exitPage = 0;
+        
         iDraw();
     }
     else if (levelSelectionPage){
@@ -1046,6 +1124,14 @@ void drawHomepage()
 
 }
 
+void drawEnterNamePage(){
+    iSetColor(255, 255, 255);
+    iFilledRectangle(0, 0, screenWidth, screenHeight);
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\EnterNamePage.jpeg");
+    iText(inputBoxX, inputBoxY - 10, playerName, GLUT_BITMAP_TIMES_ROMAN_24);
+
+
+}
 
 void drawLevelSelectionPage(){
     iSetColor(0, 255, 0);
