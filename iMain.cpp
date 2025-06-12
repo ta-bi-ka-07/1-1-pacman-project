@@ -1,9 +1,7 @@
 //this is a level-1 term-1 project of CSE,BUET on  making pac-man game using iGraphics library
 //bismillahir rahmanir rahim
 //gamepage diye gamestate page open hobe,pause
-//hello
-//acc 2
-//kkojo
+
 #include "iGraphics.h"
 
 #include<windows.h>
@@ -41,13 +39,15 @@ void drawLevel1();
  //void drawMaze();
  //
 // void drawBalls();
-// void pacmanMoveRight();
-// void pacManMoveLeft();
-// void pacManMoveUp();
-// void pacmanMoveDown();
+void pacmanMoveRight();
+void pacmanMoveLeft();
+ void pacmanMoveUp();
+void pacmanMoveDown();
 
-
-
+void ghostMoveRight();
+void ghostMoveLeft();
+void ghostMoveUp();
+void ghostMoveDown();
 
 
 void pacmanMove();
@@ -74,12 +74,19 @@ int row2=20;
 int col2=33;
 int row3=30;
 int col3=50;
+int cellwidth;
+int cellheight;
+int pacmanX = screenWidth / 2; // Initial X position of Pacman
+int pacmanY = cellheight + cellheight/2; // Initial Y position of Pacman
+//int pacmanradius = 15; // Radius of Pacman
 
  // 1 for game over, 0 for not game over
 
 /*
 function iDraw() is called again and again by the system.
 */
+int mouthOpen;
+int mouthClose;
 
 
 int maze1[15][25]=
@@ -212,15 +219,20 @@ if (homepage)
      else if(level1page)
 
      {
+
+     
         drawLevel1();
+        pacmanMove();
      }
      else if(level2page)
      {
         drawLevel2();
+        pacmanMove();
      }
      else if(level3page)
      {
         drawLevel3();
+        pacmanMove();
      }
     // {
     //     // Draw the game elements
@@ -541,38 +553,38 @@ void iSpecialKeyboard(unsigned char key)
             }
             else{
                 menuMusicON = true;
-                PlaySound("E:\\1-1-game-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
+                PlaySound("E:\\1-1-pacman-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
             }
         }
         break;
     }
     // place your codes for other keys here
-    // case GLUT_KEY_RIGHT:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveRight();
-    //     break;
+    case GLUT_KEY_RIGHT:
+     if(level1page==1|level2page==1|level3page==1)
+     {
+        pacmanMoveRight();
+        break;
         
-    //  }
+     }
      
-    // case GLUT_KEY_LEFT:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacManMoveLeft();
-    //     break;
-    //  }
-    //  case GLUT_KEY_UP:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacManMoveUp();
-    //     break;
-    //  }
-    //  case GLUT_KEY_DOWN:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveDown();
-    //     break;
-    //  }
+    case GLUT_KEY_LEFT:
+     if(level1page==1|level2page==1|level3page==1)
+     {
+        pacmanMoveLeft();
+        break;
+     }
+     case GLUT_KEY_UP:
+     if(level1page==1|level2page==1|level3page==1)
+     {
+        pacmanMoveUp();
+        break;
+     }
+     case GLUT_KEY_DOWN:
+     if(level1page==1|level2page==1|level3page==1)
+     {
+        pacmanMoveDown();
+        break;
+     }
     
     default:
         break;
@@ -787,31 +799,33 @@ void drawLevel1()
     
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    int cellWidth = screenWidth/col1;
-    int cellHeight = screenHeight/row1;
+    iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\base.png"); // Draw Pacman at the current position
+    
+    cellwidth = screenWidth/col1;
+    cellheight = screenHeight/row1;
     int i, j;
     for(i=0;i<row1;i++)
     {
         for(j=0;j<col1;j++)
         {
-            int x=j*cellWidth;
-            int y=screenHeight-(i+1)*cellHeight;
+            int x=j*cellwidth;
+            int y=screenHeight-(i+1)*cellheight;
             if (maze1[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, 4, 100); // small white dots
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 4, 100); // small white dots
             }
             
             if(maze1[i][j] == 1)
             {
                 iSetColor(0,0,139);//blue color
-                iFilledRectangle(x, y, cellWidth, cellHeight); // draw the wall
+                iFilledRectangle(x, y, cellwidth, cellheight); // draw the wall
 
 
             }
             if(maze1[i][j] == 2)
             {
                 iSetColor(255, 255, 0); // yellow color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, cellWidth / 3, 100); // larger yellow circles
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
             }
 
 
@@ -830,88 +844,162 @@ void drawLevel2()
     
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    int cellWidth = screenWidth/col2;
-    int cellHeight = screenHeight/row2;
+    cellwidth = screenWidth/col2;
+    cellheight = screenHeight/row2;
     int i, j;
     for(i=0;i<row2;i++)
     {
         for(j=0;j<col2;j++)
         {
-            int x=j*cellWidth;
-            int y=screenHeight-(i+1)*cellHeight;
-            
+            int x=j*cellwidth;
+            int y=screenHeight-(i+1)*cellheight;
+
             if (maze2[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, 3, 100); // small white dots
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 3, 100); // small white dots
             }
             
             if(maze2[i][j] == 1)
             {
                 iSetColor(0,0,139);//blue color
-                iFilledRectangle(x, y, cellWidth, cellHeight); // draw the wall
+                iFilledRectangle(x, y, cellwidth, cellheight); // draw the wall
 
             }
             if(maze2[i][j] == 2)
             {
                 iSetColor(255, 255, 0); // yellow color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, cellWidth / 3, 100); // larger yellow circles
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
             }
         }
     }
 }
 
-
 void drawLevel3()
 {
-    
+
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    int cellWidth = screenWidth / col3;
-    int cellHeight = screenHeight / row3;
+    cellwidth = screenWidth / col3;
+     cellheight = screenHeight / row3;
     int i, j;
     for(i = 0; i < row3; i++)
     {
         for(j = 0; j < col3; j++)
         {
-            int x = j * cellWidth;
-            int y = screenHeight - (i + 1) * cellHeight;
+            int x = j * cellwidth;
+            int y = screenHeight - (i + 1) * cellheight;
             if (maze3[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, 2, 100); // small white dots
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 2, 100); // small white dots
             }
 
             if(maze3[i][j] == 1)
             {
                 iSetColor(0, 0, 139); // blue color
-                iFilledRectangle(x, y, cellWidth, cellHeight); // draw the wall
+                iFilledRectangle(x, y, cellwidth, cellheight); // draw the wall
             }
             if(maze3[i][j] == 2)
             {
                 iSetColor(255, 255, 0); // yellow color
-                iFilledCircle(x + cellWidth / 2, y + cellHeight / 2, cellWidth / 3, 100); // larger yellow circles
+                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
             }
         }
     }
 }
 
-// void pacmanMoveRight()
-// {
-    
+void pacmanMoveRight()
+{
+    mouthOpen=1;
+    float dx=2.5;
+    //pacmanX += dx;
+     // Adjust the speed as needed
+    if (pacmanX + dx < screenWidth - screenHeight/2) // Check boundaries
+    {
+        pacmanX += dx; // Move Pacman to the right
+    }
+    // Check for wall collision
+   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
+   {
+       pacmanX -= dx; // Move Pacman back
+   }
+ if(mouthOpen==1)
+ {
+  iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\right1.png");
+  mouthOpen=0;
+  mouthClose=1;
+
+}
+    else if(mouthClose==1)
+    {
+        iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\right2.png");
+        mouthClose=0;
+        mouthOpen=1;
+    }
+ 
+}
+void pacmanMoveLeft()
+{
+    float dx=2.5;
+    //pacmanX -= dx;
+     // Adjust the speed as needed
+    if (pacmanX - dx > 0) // Check boundaries
+    {
+        pacmanX -= dx; // Move Pacman to the left
+    }
+   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
+   {
+       pacmanX += dx; // Move Pacman back
+   }
+}
+
+void pacmanMoveUp()
+{
+    float dy=2.5;
+    //pacmanY += dy;
+     // Adjust the speed as needed
+    if (pacmanY + dy < screenHeight - screenWidth/2) // Check boundaries
+    {
+        pacmanY += dy; // Move Pacman up
+    }
+   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
+   {
+       pacmanY -= dy; // Move Pacman back
+   }
+}
+
+void pacmanMoveDown()
+{
+    float dy=2.5;
+    //pacmanY -= dy;
+     // Adjust the speed as needed
+    if (pacmanY - dy > 0) // Check boundaries
+    {
+        pacmanY -= dy; // Move Pacman down
+    }
+   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
+   {
+       pacmanY += dy; // Move Pacman back
+   }
+
+}
+void pacmanMove()
+{
+
+pacmanMoveDown();
+pacmanMoveUp();
+pacmanMoveLeft();
+pacmanMoveRight();
 
 
 
-
-// }
-
-
-
+}
 
 void drawHomepage()
 {
-    
+
     iSetColor(0, 0, 255); // blue color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(0, 0, "E:\\1-1-game-project\\images\\front page.jpg");
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\front page.jpg");
     iSetColor (255, 255, 255);
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(655, 52, "PRESS RMB or Q to go back", GLUT_BITMAP_TIMES_ROMAN_24);
@@ -923,10 +1011,10 @@ void drawHomepage()
 void drawLevelSelectionPage(){
     iSetColor(0, 255, 0);
     iFilledRectangle(0, 0, screenWidth, screenHeight);
-    iShowImage(0, 0, "E:\\1-1-game-project\\images\\LevelSelectionPage.jpg");
-    iShowImage(90, 380, "E:\\1-1-game-project\\images\\ButtonEasy.png");
-    iShowImage(90, 280, "E:\\1-1-game-project\\images\\ButtonMedium.png");
-    iShowImage(90, 180, "E:\\1-1-game-project\\images\\ButtonHard.png");
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\LevelSelectionPage.jpg");
+    iShowImage(90, 380, "E:\\1-1-pacman-project\\images\\ButtonEasy.png");
+    iShowImage(90, 280, "E:\\1-1-pacman-project\\images\\ButtonMedium.png");
+    iShowImage(90, 180, "E:\\1-1-pacman-project\\images\\ButtonHard.png");
     iSetColor(255, 255, 255);
     iText(75, 490, "SELECT DIFFICULTY:", GLUT_BITMAP_TIMES_ROMAN_24);
 }
@@ -974,7 +1062,7 @@ void drawAbout()
 void drawMenuPage()
 {
    // iSetColor(0, 0, 255); // blue color
-    iShowImage(0, 0, "E:\\1-1-game-project\\images\\menupage.jpg");
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\menupage.jpg");
     iSetColor(255, 255, 255);
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(655, 52, "Press RMB or Q to go back", GLUT_BITMAP_TIMES_ROMAN_24);
@@ -995,7 +1083,7 @@ void drawExit()
 int main(int argc, char *argv[])
 {
 
-    PlaySound("E:\\1-1-game-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
+    PlaySound("E:\\1-1-pacman-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
     glutInit(&argc, argv);
     // place your own initialization codes here.
     iInitialize(screenWidth, screenHeight, "pacman");
