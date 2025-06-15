@@ -5,6 +5,7 @@
 #include "iGraphics.h"
 #include <string.h>
 #include <windows.h>
+#include <algorithm>
 
 
 #define screenWidth 1000
@@ -12,6 +13,7 @@
 #define paused 0
 #define running 1
 #define menu 2
+
 
 int gamestate = menu; // Initial game state is menu
 int previousState = paused; // Variable to hold the previous state when paused
@@ -35,18 +37,14 @@ bool level3MusicON = false;
 
  //void drawHighScore();
 void drawLevel1();
- void drawLevel2();
- void drawLevel3();
+void drawLevel2();
+void drawLevel3();
 void switchMusic();
 // void pauseGame();
 // void resumeGame();
  //void drawMaze();
  //
 // void drawBalls();
-void pacmanMoveRight();
-void pacmanMoveLeft();
-void pacmanMoveUp();
-void pacmanMoveDown();
 
 void ghostMoveRight();
 void ghostMoveLeft();
@@ -56,7 +54,15 @@ void ghostMoveDown();
 
 void pacmanMove();
 void ghostMove();
-void collisionDetection();
+int isValidPosition(int row, int col);
+void InitializePacman();
+void drawPacman();
+void getGridPosition(int pixelX, int pixelY, int* row, int* col);
+int canMoveInDirection(int direction);
+void startMoving(int direction);
+void updatePacmanMovement();
+int isPacmanAlignedWithGrid();
+void alignPacmanToGrid();
 
 
 
@@ -73,16 +79,16 @@ int levelSelectionPage;
 int level1page;
 int level2page;
 int level3page;
-int row1=15;
-int col1=25;
-int row2=20;
-int col2=33;
-int row3=30;
-int col3=50;
+int row1 = 15;
+int col1 = 25;
+int row2 = 20;
+int col2 = 33;
+int row3 = 30;
+int col3 = 50;
 int cellwidth;
 int cellheight;
-int pacmanX = screenWidth / 2; // Initial X position of Pacman
-int pacmanY = cellheight + cellheight/2; // Initial Y position of Pacman
+int pacmanX, pacmanY;
+int levelWidth, levelHeight;
 //int pacmanradius = 15; // Radius of Pacman
 
  // 1 for game over, 0 for not game over
@@ -98,17 +104,26 @@ int inputBoxY = 221;
 int inputBoxWidth = 337;
 int inputBoxHeight = 30;
 
+#define Right 0
+#define Left 1
+#define Up 2
+#define Down 3
+#define pacmanSpeed 4
 
-
-int mouthOpen;
-int mouthClose;
+int pacmanDirection = Right;
+int pacmanRow, pacmanCol;
+int pacmanPixelX, pacmanPixelY;     
+int targetPixelX, targetPixelY; 
+int isMoving = 0;
+int pendingDirection = -1;
+int mouthClose = 0, mouthOpen = 1;
 
 
 int maze1[15][25]=
 
 {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0},
+    {0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 2, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
     {0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0},
@@ -189,21 +204,10 @@ int maze3[30][50]=
 
 void iDraw()
 {
-    // place your drawing codes here
+
     iClear();
-    // iText(140, 180, "Hello World");
-    // iLine(100, 100, 200, 200);
-    // iEllipse(200, 200, 50, 50);
-    // iRectangle(100, 100, 50, 50);
 
-    // iCircle(300, 300, 50);
-
-    // iSetColor(255, 0, 0);
-
-    // iFilledCircle(300, 300, 50);
-    
-    // iSetColor(0, 255, 0);
-if (homepage)
+    if (homepage)
     {
         drawHomepage();
     }
@@ -237,30 +241,22 @@ if (homepage)
      else if(level1page)
 
      {
+        InitializePacman();
         drawLevel1();
-        pacmanMove();
+
      }
      else if(level2page)
      {
         drawLevel2();
-        pacmanMove();
+        
      }
      else if(level3page)
      {
         drawLevel3();
-        pacmanMove();
      }
 
-    // {
-    //     // Draw the game elements
-    //     drawMaze();
-    //     drawPacman();
-    //     drawGhosts();
-    //     drawBalls();
-        // Add other game elements as needed
 }
 
-    // Add any other drawing functions here
 
 
 
@@ -271,54 +267,7 @@ function iMouseMove() is called when the user moves the mouse.
 void iMouseMove(int mx, int my)
 {
  printf("Mouse moved to (%d, %d)\n", mx, my);
-   
-//    if(homepage==1 && mx>=370 && mx<=608 && my>=355 && my<=400)
-//     {
-//         homepage = 0; 
-//         gamePage = 1; 
-//         buttons(); // Draw buttons on the homepage
-//          // Draw the game page
-//          // Set game page to active
-//         // You can add code here to initialize the game state if needed
-//     }
-//       if(homepage==1 && mx>=370 && mx<=608 && my>=355 && my<=400)
-//     {
-//         homepage = 0; 
-//         gamePage = 1; 
-//         buttons(); // Draw buttons on the homepage
-//          // Draw the game page
-//          // Set game page to active
-//         // You can add code here to initialize the game state if needed
-//     }
-//       if(homepage==1 && mx>=370 && mx<=608 && my>=355 && my<=400)
-//     {
-//         homepage = 0; 
-//         gamePage = 1; 
-//         buttons(); // Draw buttons on the homepage
-//          // Draw the game page
-//          // Set game page to active
-//         // You can add code here to initialize the game state if needed
-//     }
-//       if(homepage==1 && mx>=370 && mx<=608 && my>=355 && my<=400)
-//     {
-//         homepage = 0; 
-//         gamePage = 1; 
-//         buttons(); // Draw buttons on the homepage
-//          // Draw the game page
-//          // Set game page to active
-//         // You can add code here to initialize the game state if needed
-//     }
-//       if(homepage==1 && mx>=370 && mx<=608 && my>=355 && my<=400)
-//     {
-//         homepage = 0; 
-//         gamePage = 1; 
-//         buttons(); // Draw buttons on the homepage
-//          // Draw the game page
-//          // Set game page to active
-//         // You can add code here to initialize the game state if needed
-//     }
-   
-//     // place your codes here
+
 }
 
 // /*
@@ -421,16 +370,19 @@ void iMouse(int button, int state, int mx, int my)
         }
         else if (mx >= 98 && mx <= 282 && my >= 396 && my <= 454 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
+            InitializePacman();
             level1page = 1;
             switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 295 && my <= 355 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
+            InitializePacman();
             level2page = 1;
             switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 197 && my <= 255 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
+            InitializePacman();
             level3page = 1;
             switchMusic();
         }
@@ -635,46 +587,59 @@ void iSpecialKeyboard(unsigned char key)
         }
         break;
     }
-    // place your codes for other keys here
-    // case GLUT_KEY_RIGHT:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveRight();
-    //     break;
         
-    //  }
-     
-    // case GLUT_KEY_LEFT:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveLeft();
-    //     break;
-    //  }
-    //  case GLUT_KEY_UP:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveUp();
-    //     break;
-    //  }
-    //  case GLUT_KEY_DOWN:
-    //  if(level1page==1|level2page==1|level3page==1)
-    //  {
-    //     pacmanMoveDown();
-    //     break;
-    //  }
     
-    // default:
-    //     break;
+    // Handle arrow keys for Pacman movement
+    case GLUT_KEY_LEFT:
+    case GLUT_KEY_RIGHT:
+    case GLUT_KEY_UP:
+    case GLUT_KEY_DOWN:
+    {
+        if (level1page || level2page || level3page){
+            int newDirection = pacmanDirection;
+            switch (key) {
+            case GLUT_KEY_LEFT: newDirection = Left; break;
+            case GLUT_KEY_RIGHT: newDirection = Right; break;
+            case GLUT_KEY_UP: newDirection = Up; break;
+            case GLUT_KEY_DOWN: newDirection = Down; break;
+            }
+            
+            // If we can move in the new direction, change direction immediately
+            if (level1page){
+                cellwidth = screenWidth/col1;
+                cellheight = screenHeight/row1;
+                for(int i=0;i<row1;i++)
+                {
+                    for(int j=0;j<col1;j++)
+                    {
+                        int x=j*cellwidth;
+                        int y=screenHeight-(i+1)*cellheight;
+                        if (pacmanX == x && pacmanY == y){
+                            if (canMoveInDirection(newDirection)) {
+                            isMoving = 0; // Stop current movement
+                            pacmanDirection = newDirection;
+                            startMoving(newDirection); // Start moving in new direction
+                            }
+                            else {
+                            // If we can't move in the new direction immediately, 
+                            // store it as a pending direction to try later
+                            pacmanDirection = newDirection;
+                            }
+                        }
+                    }
+                }
+                break;    
+            }  
+        }
+        default:
+            break;
     }
 }
-
+}
 
 void iLoadImages()
-{
-    // Load images here if needed
-// homepageImage = iLoadImage("C:\\Users\\User\\Downloads\\Modern-iGraphics-main\\images\\frontpage.jpg","frontpage");
-// Example: iLoadImage("", "myImage");
-// If you want to use iShowBMP, you don't need to load the image beforehand.
+{   
+    
 }
 
 
@@ -892,42 +857,39 @@ void drawLevel1()
 {
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\base.png"); // Draw Pacman at the current position
-    
+
     cellwidth = screenWidth/col1;
     cellheight = screenHeight/row1;
-    int i, j;
-    for(i=0;i<row1;i++)
+    for(int i=0;i<row1;i++)
     {
-        for(j=0;j<col1;j++)
+        for(int j=0;j<col1;j++)
         {
             int x=j*cellwidth;
             int y=screenHeight-(i+1)*cellheight;
             if (maze1[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
-                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 4, 100); // small white dots
+                // iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 4, 100); // small white dots
+                iShowImage(x + cellwidth/2, y + cellheight/2, "E:\\1-1-pacman-project\\Sprites\\other\\dot.png");
             }
             
-            if(maze1[i][j] == 1)
+            else if(maze1[i][j] == 1)
             {
                 iSetColor(0,0,139);//blue color
                 iFilledRectangle(x, y, cellwidth, cellheight); // draw the wall
 
 
             }
-            if(maze1[i][j] == 2)
+            else if(maze1[i][j] == 2)
             {
                 iSetColor(255, 255, 0); // yellow color
                 iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
             }
+     
+        }
+    }
 
+    drawPacman();
 
-     }
-
-
-
-
-}
 }
 
 
@@ -965,6 +927,7 @@ void drawLevel2()
             }
         }
     }
+    drawPacman();
 }
 
 void drawLevel3()
@@ -973,7 +936,7 @@ void drawLevel3()
     iSetColor(0, 0, 0); // black colour
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
     cellwidth = screenWidth / col3;
-     cellheight = screenHeight / row3;
+    cellheight = screenHeight / row3;
     int i, j;
     for(i = 0; i < row3; i++)
     {
@@ -983,7 +946,8 @@ void drawLevel3()
             int y = screenHeight - (i + 1) * cellheight;
             if (maze3[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
-                iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 2, 100); // small white dots
+                // iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 2, 100); // small white dots
+                iShowImage(x + 4, y, "E:\\1-1-pacman-project\\Sprites\\other\\dot.png");
             }
 
             if(maze3[i][j] == 1)
@@ -998,6 +962,7 @@ void drawLevel3()
             }
         }
     }
+    drawPacman();
 }
 
 void switchMusic(){
@@ -1024,92 +989,343 @@ void switchMusic(){
     }
 }
 
-void pacmanMoveRight()
-{
-    mouthOpen=1;
-    float dx=2.5;
-    //pacmanX += dx;
-     // Adjust the speed as needed
-    if (pacmanX + dx < screenWidth - screenHeight/2) // Check boundaries
-    {
-        pacmanX += dx; // Move Pacman to the right
+// Function to check if Pacman is aligned with the grid
+int isPacmanAlignedWithGrid() {
+    int cellwidth, cellheight;
+    
+    // Get cell dimensions based on current level
+    if (level1page) {
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } else if (level2page) {
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+    } else if (level3page) {
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
+    } else {
+        return 0; // Not in a valid level
     }
-    // Check for wall collision
-   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
-   {
-       pacmanX -= dx; // Move Pacman back
-   }
- if(mouthOpen==1)
- {
-  iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\right1.png");
-  mouthOpen=0;
-  mouthClose=1;
-
+    
+    // Calculate what the centered position should be for current grid cell
+    int expectedX = pacmanCol * cellwidth + cellwidth/2;
+    int expectedY = screenHeight - (pacmanRow + 1) * cellheight + cellheight/2;
+    
+    // Check if Pacman is close enough to the center (within a small tolerance)
+    int tolerance = pacmanSpeed; // Allow some tolerance based on movement speed
+    
+    return (abs(pacmanPixelX - expectedX) <= tolerance && 
+            abs(pacmanPixelY - expectedY) <= tolerance);
 }
-    else if(mouthClose==1)
-    {
-        iShowImage(pacmanX, pacmanY, "E:\\1-1-pacman-project\\images\\sprites\\right2.png");
-        mouthClose=0;
-        mouthOpen=1;
+
+void alignPacmanToGrid() {
+    int cellwidth, cellheight;
+    
+    if (level1page) {
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } else if (level2page) {
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+    } else if (level3page) {
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
     }
- 
+    
+    pacmanPixelX = pacmanCol * cellwidth + cellwidth/2;
+    pacmanPixelY = screenHeight - (pacmanRow + 1) * cellheight + cellheight/2;
 }
-void pacmanMoveLeft()
-{
-    float dx=2.5;
-    //pacmanX -= dx;
-     // Adjust the speed as needed
-    if (pacmanX - dx > 0) // Check boundaries
-    {
-        pacmanX -= dx; // Move Pacman to the left
+
+// Get grid position from pixel coordinates
+void getGridPosition(int pixelX, int pixelY, int* row, int* col){
+    if (level1page){
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+        
+        *col = pixelX / cellwidth;
+        *row = (screenHeight - pixelY) / cellheight;
+        
+        // Clamp to valid range
+        if (*row < 0) *row = 0;
+        if (*row >= row1) *row = row1 - 1;
+        if (*col < 0) *col = 0;
+        if (*col >= col1) *col = col1 - 1;
     }
-   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
-   {
-       pacmanX += dx; // Move Pacman back
-   }
-}
-
-void pacmanMoveUp()
-{
-    float dy=2.5;
-    //pacmanY += dy;
-     // Adjust the speed as needed
-    if (pacmanY + dy < screenHeight - screenWidth/2) // Check boundaries
-    {
-        pacmanY += dy; // Move Pacman up
+    else if (level2page){
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+        
+        *col = pixelX / cellwidth;
+        *row = (screenHeight - pixelY) / cellheight;
+        
+        // Clamp to valid range
+        if (*row < 0) *row = 0;
+        if (*row >= row2) *row = row2 - 1;
+        if (*col < 0) *col = 0;
+        if (*col >= col2) *col = col2 - 1;
     }
-   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
-   {
-       pacmanY -= dy; // Move Pacman back
-   }
-}
-
-void pacmanMoveDown()
-{
-    float dy=2.5;
-    //pacmanY -= dy;
-     // Adjust the speed as needed
-    if (pacmanY - dy > 0) // Check boundaries
-    {
-        pacmanY -= dy; // Move Pacman down
+    else if (level3page){
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
+        
+        *col = pixelX / cellwidth;
+        *row = (screenHeight - pixelY) / cellheight;
+        
+        // Clamp to valid range
+        if (*row < 0) *row = 0;
+        if (*row >= row3) *row = row3 - 1;
+        if (*col < 0) *col = 0;
+        if (*col >= col3) *col = col3 - 1;
     }
-   if(maze1[screenHeight-(pacmanY/cellheight+1)][pacmanX/cellwidth] == 1) // Check for wall collision
-   {
-       pacmanY += dy; // Move Pacman back
-   }
-
 }
-void pacmanMove()
-{
 
-pacmanMoveDown();
-pacmanMoveUp();
-pacmanMoveLeft();
-pacmanMoveRight();
+void InitializePacman(){
+    // Find Pac-Man spawn position (value 4 in maze)
+    if (level1page){
+        for(int i = 0; i < row1; i++) {
+            for(int j = 0; j < col1; j++) {
+                if(maze1[i][j] == 4) {
+                    pacmanRow = i;
+                    pacmanCol = j;
+                    
+                    // Convert to pixel coordinates
+                    cellwidth = screenWidth / col1;
+                    cellheight = screenHeight / row1;
+                    pacmanPixelX = j * cellwidth + cellwidth/2;
+                    pacmanPixelY = screenHeight - (i + 1) * cellheight + cellheight/2;
 
+                    // Set target to current position initially
+                    targetPixelX = pacmanPixelX;
+                    targetPixelY = pacmanPixelY;
+                    
+                    // Remove the spawn marker from maze
+                    maze1[i][j] = -1;
+                    return;
+                }
+            }
+        }
+    }
+    else if (level2page){
+        for(int i = 0; i < row2; i++) {
+            for(int j = 0; j < col2; j++) {
+                if(maze2[i][j] == 4) {
+                    pacmanRow = i;
+                    pacmanCol = j;
+                    
+                    // Convert to pixel coordinates
+                    cellwidth = screenWidth / col3;
+                    cellheight = screenHeight / row3;
+                    pacmanPixelX = j * cellwidth + cellwidth / 2;
+                    pacmanPixelY = screenHeight - (i + 1) * cellheight + cellheight / 2;
 
+                    // Set target to current position initially
+                    targetPixelX = pacmanPixelX;
+                    targetPixelY = pacmanPixelY;
+                    
+                    // Remove the spawn marker from maze
+                    maze2[i][j] = -1;
+                    return;
+                }
+            }
+        }
+    }
+    else if (level3page){
+        for(int i = 0; i < row3; i++) {
+            for(int j = 0; j < col3; j++) {
+                if(maze3[i][j] == 4) {
+                    pacmanRow = i;
+                    pacmanCol = j;
+                    
+                    // Convert to pixel coordinates
+                    cellwidth = screenWidth / col3;
+                    cellheight = screenHeight / row3;
+                    pacmanPixelX = j * cellwidth + cellwidth/2;
+                    pacmanPixelY = screenHeight - (i + 1) * cellheight + cellheight/2;
 
+                    // Set target to current position initially
+                    targetPixelX = pacmanPixelX;
+                    targetPixelY = pacmanPixelY;
+                    
+                    // Remove the spawn marker from maze
+                    maze3[i][j] = -1;
+                    return;
+                }
+            }
+        }
+    }
 }
+
+int isValidPosition(int row, int col){
+    // Check bounds
+    if (level1page){
+        if (row < 0 || row >= row1 || col < 0 || col >= col1) {
+            return 0;
+        }
+        
+        // Check if cell is walkable (0 = food, 2 = power pellet)
+        return (maze1[row][col] != 1);
+    }
+    else if (level2page){
+        if (row < 0 || row >= row2 || col < 0 || col >= col2) {
+            return 0;
+        }
+        
+        // Check if cell is walkable (0 = food, 2 = power pellet)
+        return (maze2[row][col] != 1);
+    }
+    else if (level3page){
+        if (row < 0 || row >= row3 || col < 0 || col >= col3) {
+            return 0;
+        }
+        
+        // Check if cell is walkable (0 = food, 2 = power pellet)
+        return (maze3[row][col] != 1);
+    }
+    return 0;
+}
+
+// Check if Pac-Man can move in a direction from current position
+int canMoveInDirection(int direction) {
+    int newRow = pacmanRow;
+    int newCol = pacmanCol;
+    
+    switch (direction) {
+        case Left:  newCol--; break;
+        case Right: newCol++; break;
+        case Up:    newRow--; break;
+        case Down:  newRow++; break;
+    }
+    
+    return isValidPosition(newRow, newCol);
+}
+
+// Start moving in a direction
+void startMoving(int direction) {
+    if (canMoveInDirection(direction)) {
+        pacmanDirection = direction;
+        isMoving = 1;
+    
+        // Calculate target position based on current level
+        if (level1page) {
+            cellwidth = screenWidth / col1;
+            cellheight = screenHeight / row1;
+        } else if (level2page) {
+            cellwidth = screenWidth / col2;
+            cellheight = screenHeight / row2;
+        } else if (level3page) {
+            cellwidth = screenWidth / col3;
+            cellheight = screenHeight / row3;
+        }
+        
+        switch (direction) {
+            case Left:
+                targetPixelX = pacmanPixelX - cellwidth;
+                targetPixelY = pacmanPixelY;
+                break;
+            case Right:
+                targetPixelX = pacmanPixelX + cellwidth;
+                targetPixelY = pacmanPixelY;
+                break;
+            case Up:
+                targetPixelX = pacmanPixelX;
+                targetPixelY = pacmanPixelY + cellheight;
+                break;
+            case Down:
+                targetPixelX = pacmanPixelX;
+                targetPixelY = pacmanPixelY - cellheight;
+                break;
+        }
+    }
+}
+
+
+void updatePacmanMovement() {
+    if (!isMoving) {
+        // Not moving, check if we should continue in current direction
+        if (canMoveInDirection(pacmanDirection)) {
+            startMoving(pacmanDirection);
+        }
+        return;
+    }
+    
+    
+    // Calculate distance to target
+    int distanceX = targetPixelX - pacmanPixelX;
+    int distanceY = targetPixelY - pacmanPixelY;
+    int distance = abs(distanceX) + abs(distanceY);
+    
+    // If we're close enough to target, snap to it
+    if (distance <= pacmanSpeed) {
+        pacmanPixelX = targetPixelX;
+        pacmanPixelY = targetPixelY;
+        isMoving = 0;
+        
+        // Update grid position
+        getGridPosition(pacmanPixelX, pacmanPixelY, &pacmanRow, &pacmanCol);
+        
+        // Eat food/pellets at new position
+        if (level1page && pacmanRow >= 0 && pacmanRow < row1 && pacmanCol >= 0 && pacmanCol < col1) {
+            if (maze1[pacmanRow][pacmanCol] == 2) {
+                maze1[pacmanRow][pacmanCol] = -1;  // Remove power pellet
+                // Add power-up logic here
+            } else if (maze1[pacmanRow][pacmanCol] == 0) {
+                maze1[pacmanRow][pacmanCol] = -1;  // Remove dot
+            }
+        }
+        else if (level2page && pacmanRow >= 0 && pacmanRow < row2 && pacmanCol >= 0 && pacmanCol < col2) {
+            if (maze2[pacmanRow][pacmanCol] == 2) {
+                maze2[pacmanRow][pacmanCol] = -1;  // Remove power pellet
+            } else if (maze2[pacmanRow][pacmanCol] == 0) {
+                maze2[pacmanRow][pacmanCol] = -1;  // Remove dot
+            }
+        }
+        else if (level3page && pacmanRow >= 0 && pacmanRow < row3 && pacmanCol >= 0 && pacmanCol < col3) {
+            if (maze3[pacmanRow][pacmanCol] == 2) {
+                maze3[pacmanRow][pacmanCol] = -1;  // Remove power pellet
+            } else if (maze3[pacmanRow][pacmanCol] == 0) {
+                maze3[pacmanRow][pacmanCol] = -1;  // Remove dot
+            }
+        }
+        
+        // Now that we're aligned, check for pending direction changes
+        if (pendingDirection != -1 && canMoveInDirection(pendingDirection)) {
+            pacmanDirection = pendingDirection;
+            startMoving(pendingDirection);
+            pendingDirection = -1; // Clear pending direction
+        }
+        // Otherwise continue in current direction if possible
+        else if (canMoveInDirection(pacmanDirection)) {
+            startMoving(pacmanDirection);
+        }
+    } 
+        else {
+        // Calculate next position
+        int nextX = pacmanPixelX;
+        int nextY = pacmanPixelY;
+        
+        if (distanceX > 0) nextX += min(pacmanSpeed, distanceX);
+        else if (distanceX < 0) nextX += max(-pacmanSpeed, distanceX);
+        
+        if (distanceY > 0) nextY += min(pacmanSpeed, distanceY);
+        else if (distanceY < 0) nextY += max(-pacmanSpeed, distanceY);
+        
+        // Check if the next position would be valid
+        int nextRow, nextCol;
+        getGridPosition(nextX, nextY, &nextRow, &nextCol);
+        
+        // Only move if the destination is valid
+        if (isValidPosition(nextRow, nextCol)) {
+            pacmanPixelX = nextX;
+            pacmanPixelY = nextY;
+        } else {
+            // Hit a wall, stop moving and align to grid
+            isMoving = 0;
+            alignPacmanToGrid();
+        }
+    }
+}
+
+
 
 void drawHomepage()
 {
@@ -1133,6 +1349,25 @@ void drawEnterNamePage(){
 
 }
 
+void drawPacman() {
+    
+    switch(pacmanDirection) {
+        case Right:
+            iShowImage(pacmanPixelX, pacmanPixelY, "E:\\1-1-pacman-project\\Sprites\\pacman-right\\1.png");
+            break;
+        case Left:
+            iShowImage(pacmanPixelX, pacmanPixelY, "E:\\1-1-pacman-project\\Sprites\\pacman-left\\1.png");
+            break;
+        case Up:
+            iShowImage(pacmanPixelX, pacmanPixelY, "E:\\1-1-pacman-project\\Sprites\\pacman-up\\1.png");
+            break;
+        case Down:
+            iShowImage(pacmanPixelX, pacmanPixelY, "E:\\1-1-pacman-project\\Sprites\\pacman-down\\1.png");
+            break;
+    }
+}
+
+
 void drawLevelSelectionPage(){
     iSetColor(0, 255, 0);
     iFilledRectangle(0, 0, screenWidth, screenHeight);
@@ -1143,6 +1378,8 @@ void drawLevelSelectionPage(){
     iSetColor(255, 255, 255);
     iText(75, 490, "SELECT DIFFICULTY:", GLUT_BITMAP_TIMES_ROMAN_24);
 }
+
+
 
 void drawInstructions()
 {
@@ -1157,7 +1394,7 @@ void drawInstructions()
     iText(100, 350, "3. Avoid ghosts!Touching one will make you lose  a life.", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 300, "4. Press 'p' to pause the game.", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 250, "5. Press 'r' to resume the game.", GLUT_BITMAP_TIMES_ROMAN_24);
-    iText(100, 200, "6. Press 'q' to quit the game.", GLUT_BITMAP_TIMES_ROMAN_24);
+    iText(100, 200, "6. Press 'Esc' to quit the game.", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 150, "7. Press 'h' to go back to the homepage.", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 100, "8. The game is over when you lose all your lives.", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 50, "9. Good luck!", GLUT_BITMAP_TIMES_ROMAN_24);
@@ -1193,7 +1430,7 @@ void drawMenuPage()
     iText(655, 52, "Press Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
 
 }
- void drawGamePage()
+void drawGamePage()
 {
     iSetColor(0, 0, 255); // green color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
@@ -1209,6 +1446,7 @@ int main(int argc, char *argv[])
 {
     PlaySound("E:\\1-1-pacman-project\\music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
     glutInit(&argc, argv);
+    iSetTimer(80, updatePacmanMovement);
     // place your own initialization codes here.
     iInitialize(screenWidth, screenHeight, "pacman");
     return 0;
