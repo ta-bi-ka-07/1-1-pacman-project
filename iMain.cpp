@@ -1330,10 +1330,10 @@ void updatePacmanMovement() {
 void drawHomepage()
 {
 
-    iSetColor(0, 0, 255); // blue color
+    iSetColor(0, 0, 0); // black color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\front page.jpg");
-    iSetColor (255, 255, 255);
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\front page.png");
+    iSetColor (255, 255, 0); // yellow color for text
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(655, 52, "PRESS Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
 
