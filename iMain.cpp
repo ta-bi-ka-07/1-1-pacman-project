@@ -338,31 +338,31 @@ function iMouse() is called when the user presses/releases the mouse.
 void iMouse(int button, int state, int mx, int my)
 {
     if (homepage == 1){
-            if (mx>=370 && mx<=608 && my>=355 && my<=400 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+            if (mx>=410 && mx<=635 && my>=325 && my<=385 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             menuPage = 1; 
             buttons(); 
         }
-        else if (mx>=367 && mx<=605 && my>=291 && my<=333 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+        else if (mx>=410 && mx<=635 && my>=250 && my<=315 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             instructionsPage = 1; 
             buttons(); 
         }
-        else if (mx>=369 && mx<=605 && my>=231 && my<=275 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+        else if (mx>=410 && mx<=635 && my>=170 && my<=240 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             highScorePage = 1; 
             buttons(); 
         }
-        else if (mx>=367 && mx<=605 && my>=164 && my<=211 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+        else if (mx>=410 && mx<=635 && my>=95 && my<=165 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             aboutPage= 1; 
             buttons(); 
         }
-        else if (mx>=368 && mx<=605 && my>=100 && my<=146 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+        else if (mx>=410 && mx<=635 && my>=20 && my<=85 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             exitPage = 1; 
@@ -1146,8 +1146,9 @@ void drawLevelSelectionPage(){
 
 void drawInstructions()
 {
-    iSetColor(0, 0, 255); // blue color
+    iSetColor(0, 0, 0); // black color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\background.png");
     // Add instructions drawing code here
     // For example, draw the instructions text or images
     iSetColor(255, 255, 255); // white color for text
@@ -1164,8 +1165,9 @@ void drawInstructions()
 }
 void drawAbout()
 {
-    iSetColor(0, 0, 255); // blue color
+    iSetColor(0, 0, 0); // black color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
+    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\background.png");
     // Add about page drawing code here
     // For example, draw the about text or images
     iSetColor(255, 255, 255); // white color for text
