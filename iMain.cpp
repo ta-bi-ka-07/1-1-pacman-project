@@ -1119,7 +1119,7 @@ void drawHomepage()
     iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\front page.jpg");
     iSetColor (255, 255, 255);
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
-    iText(655, 52, "PRESS RMB or Q to go back", GLUT_BITMAP_TIMES_ROMAN_24);
+    iText(655, 52, "PRESS Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
 
 
 }
@@ -1190,7 +1190,7 @@ void drawMenuPage()
     iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\menupage.jpg");
     iSetColor(255, 255, 255);
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
-    iText(655, 52, "Press RMB or Q to go back", GLUT_BITMAP_TIMES_ROMAN_24);
+    iText(655, 52, "Press Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
 
 }
  void drawGamePage()
