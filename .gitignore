@@ -1,0 +1,4 @@
+*.exe
+*.lo
+/bin/
+/obj/
