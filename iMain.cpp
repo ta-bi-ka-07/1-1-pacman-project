@@ -63,6 +63,31 @@ int isPixelPositionValid(int pixelX, int pixelY);
 int canStartMoving(int direction);
 
 
+#define MAX_GHOSTS 4
+#define GHOST_SPEED 2
+
+typedef struct {
+    int row, col;           // Grid position
+    int pixelX, pixelY;     // Pixel position
+    int targetX, targetY;   // Target pixel position
+    int direction;          // Current direction
+    int isMoving;           // Movement state
+    int color;              // Ghost color (0=red, 1=pink, 2=cyan, 3=orange)
+    int moveCounter;        // Counter for movement timing
+} Ghost;
+
+Ghost ghosts[MAX_GHOSTS];
+int numGhosts = 0;
+
+void InitializeGhosts();
+int canGhostMoveInDirection(Ghost* ghost, int direction);
+int getValidDirections(Ghost* ghost, int validDirs[4]);
+int chooseRandomDirection(Ghost* ghost);
+void startGhostMoving(Ghost* ghost, int direction);
+void updateGhostMovement();
+int checkGhostCollision();
+void drawGhosts();
+
 
 int homepageImage; // Variable to hold the homepage image
 int homepage = 1; // 1 for homepage, 0 for game
@@ -87,13 +112,8 @@ int cellwidth;
 int cellheight;
 int pacmanX, pacmanY;
 int levelWidth, levelHeight;
-//int pacmanradius = 15; // Radius of Pacman
 
- // 1 for game over, 0 for not game over
 
-/*
-function iDraw() is called again and again by the system.
-*/
 char playerName[25] = "";
 int namelength = 0;
 bool TextInputActive = true;
@@ -118,11 +138,13 @@ int movementflag = 1;
 int mouthClose = 0, mouthOpen = 1;
 
 
+
+
 int maze1[15][25]=
 
 {
     {0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 2, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0},
+    {0, 2, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
     {0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0},
@@ -130,8 +152,8 @@ int maze1[15][25]=
     {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
     {1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1},
     {0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0},
-    {0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0},
+    {0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 5, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0},
+    {0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 5, 0, 0, 0, 5, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0},
     {0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0},
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 2, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 2, 0},
@@ -142,7 +164,7 @@ int maze1[15][25]=
 int maze2[20][33]=
  {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1},
     {1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1},
     {1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1},
@@ -171,7 +193,7 @@ int maze3[30][50]=
     {1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1},
     {1, 2, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2, 1},
     {1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 4, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1},
     {1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1},
     {1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1},
@@ -241,16 +263,21 @@ void iDraw()
 
      {
         InitializePacman();
+        InitializeGhosts();
         drawLevel1();
 
      }
      else if(level2page)
-     {
+     {  
+        InitializePacman();
+        InitializeGhosts();
         drawLevel2();
         
      }
      else if(level3page)
      {
+        InitializePacman();
+        InitializeGhosts();
         drawLevel3();
      }
 
@@ -871,12 +898,13 @@ void drawLevel1()
             {
                 iSetColor(255, 255, 0); // yellow color
                 // iFilledCircle(x + cellwidth / 2, y + cellheight / 2, cellwidth / 3, 100); // larger yellow circles
-                iShowImage(x+cellwidth/2, y + cellheight/2, "Sprites\\other\\strawberry.png");
+                iShowImage(x+cellwidth/3.5, y + cellheight/3.5, "Sprites\\other\\strawberry.png");
             }
      
         }
     }
     drawPacman();
+    drawGhosts();
 }
 
 
@@ -934,7 +962,7 @@ void drawLevel3()
             if (maze3[i][j] == 0) {
                 iSetColor(255, 255, 255); // white color
                 // iFilledCircle(x + cellwidth / 2, y + cellheight / 2, 2, 100); // small white dots
-                iShowImage(x + 4, y, "Sprites\\other\\dot.png");
+                iShowImage(x + 2 , y + 2, "Sprites\\other\\dot.png");
             }
 
             if(maze3[i][j] == 1)
@@ -1018,8 +1046,14 @@ void alignPacmanToGrid() {
         cellheight = screenHeight / row3;
     }
     
-    pacmanPixelX = pacmanCol*cellwidth + 8;
-    pacmanPixelY = screenHeight-(pacmanRow+1)*cellheight + 8;
+    if (level1page || level2page){
+        pacmanPixelX = pacmanCol*cellwidth + 8;
+        pacmanPixelY = screenHeight-(pacmanRow+1)*cellheight + 8;
+    }
+    else{
+        pacmanPixelX = pacmanCol*cellwidth + 5;
+        pacmanPixelY = screenHeight-(pacmanRow+1)*cellheight + 5;
+    }
 
 }
 
@@ -1078,7 +1112,7 @@ void InitializePacman(){
                     // Convert to pixel coordinates
                     cellwidth = screenWidth / col1;
                     cellheight = screenHeight / row1;
-                    pacmanPixelX = j * cellwidth + 5;
+                    pacmanPixelX = j * cellwidth + 8;
                     pacmanPixelY = screenHeight - (i + 1) * cellheight + 8;
 
                     // Set target to current position initially
@@ -1102,8 +1136,8 @@ void InitializePacman(){
                     // Convert to pixel coordinates
                     cellwidth = screenWidth / col2;
                     cellheight = screenHeight / row2;
-                    pacmanPixelX = j * cellwidth + cellwidth / 2;
-                    pacmanPixelY = screenHeight - (i + 1) * cellheight + cellheight / 2;
+                    pacmanPixelX = j * cellwidth + 5;
+                    pacmanPixelY = screenHeight - (i + 1) * cellheight + 5;
 
                     // Set target to current position initially
                     targetPixelX = pacmanPixelX;
@@ -1126,8 +1160,8 @@ void InitializePacman(){
                     // Convert to pixel coordinates
                     cellwidth = screenWidth / col3;
                     cellheight = screenHeight / row3;
-                    pacmanPixelX = j * cellwidth + cellwidth/2;
-                    pacmanPixelY = screenHeight - (i + 1) * cellheight + cellheight/2;
+                    pacmanPixelX = j * cellwidth + 5;
+                    pacmanPixelY = screenHeight - (i + 1) * cellheight + 5;
 
                     // Set target to current position initially
                     targetPixelX = pacmanPixelX;
@@ -1285,7 +1319,6 @@ void updatePacmanMovement() {
                     maze3[pacmanRow][pacmanCol] = -1;  // Remove dot
                 }
             }
-            
             // Check for pending direction changes
             if (pendingDirection != -1 && canMoveInDirection(pendingDirection)) {
                 pacmanDirection = pendingDirection;
@@ -1296,13 +1329,14 @@ void updatePacmanMovement() {
             else if (canMoveInDirection(pacmanDirection)) {
                 startMoving(pacmanDirection);
             }
-        } else {
+            else {
             // Target position became invalid, stop and align
             isMoving = 0;
             alignPacmanToGrid();
-        }
-    } 
-    else {
+            }
+            }
+        }    
+        else {
         // Calculate next position with smaller steps for better collision detection
         int stepSize = min(pacmanSpeed, distance);
         int nextX = pacmanPixelX;
@@ -1323,10 +1357,289 @@ void updatePacmanMovement() {
             // Hit a wall, stop moving and align to grid
             isMoving = 0;
             alignPacmanToGrid();
+            }
+        }
+}
+
+
+
+
+void InitializeGhosts(){
+    numGhosts = 0;
+    
+    if (level1page) {
+        // Find ghost spawn positions (value 5 in maze1)
+        for(int i = 0; i < row1; i++) {
+            for(int j = 0; j < col1; j++) {
+                if(maze1[i][j] == 5 && numGhosts < MAX_GHOSTS) {
+                    ghosts[numGhosts].row = i;
+                    ghosts[numGhosts].col = j;
+                    
+                    // Convert to pixel coordinates
+                    int cellwidth = screenWidth / col1;
+                    int cellheight = screenHeight / row1;
+                    ghosts[numGhosts].pixelX = j * cellwidth + 8;
+                    ghosts[numGhosts].pixelY = screenHeight - (i + 1) * cellheight + 8;
+                    
+                    // Set initial target to current position
+                    ghosts[numGhosts].targetX = ghosts[numGhosts].pixelX;
+                    ghosts[numGhosts].targetY = ghosts[numGhosts].pixelY;
+                    
+                    // Initialize other properties
+                    ghosts[numGhosts].direction = Right; // Start moving right
+                    ghosts[numGhosts].isMoving = 0;
+                    ghosts[numGhosts].color = numGhosts; // Different color for each ghost
+                    ghosts[numGhosts].moveCounter = 0;
+                    
+                    // Remove spawn marker from maze
+                    maze1[i][j] = -1;
+                    numGhosts++;
+                }
+            }
+        }
+    }
+    else if (level2page) {
+        // Similar logic for level2
+        for(int i = 0; i < row2; i++) {
+            for(int j = 0; j < col2; j++) {
+                if(maze2[i][j] == 5 && numGhosts < MAX_GHOSTS) {
+                    ghosts[numGhosts].row = i;
+                    ghosts[numGhosts].col = j;
+                    
+                    int cellwidth = screenWidth / col2;
+                    int cellheight = screenHeight / row2;
+                    ghosts[numGhosts].pixelX = j * cellwidth + 5;
+                    ghosts[numGhosts].pixelY = screenHeight - (i + 1) * cellheight + 5;
+                    
+                    ghosts[numGhosts].targetX = ghosts[numGhosts].pixelX;
+                    ghosts[numGhosts].targetY = ghosts[numGhosts].pixelY;
+                    ghosts[numGhosts].direction = Right;
+                    ghosts[numGhosts].isMoving = 0;
+                    ghosts[numGhosts].color = numGhosts;
+                    ghosts[numGhosts].moveCounter = 0;
+                    
+                    maze2[i][j] = -1;
+                    numGhosts++;
+                }
+            }
+        }
+    }
+    else if (level3page) {
+        // Similar logic for level3
+        for(int i = 0; i < row3; i++) {
+            for(int j = 0; j < col3; j++) {
+                if(maze3[i][j] == 5 && numGhosts < MAX_GHOSTS) {
+                    ghosts[numGhosts].row = i;
+                    ghosts[numGhosts].col = j;
+                    
+                    int cellwidth = screenWidth / col3;
+                    int cellheight = screenHeight / row3;
+                    ghosts[numGhosts].pixelX = j * cellwidth + 5;
+                    ghosts[numGhosts].pixelY = screenHeight - (i + 1) * cellheight + 5;
+                    
+                    ghosts[numGhosts].targetX = ghosts[numGhosts].pixelX;
+                    ghosts[numGhosts].targetY = ghosts[numGhosts].pixelY;
+                    ghosts[numGhosts].direction = Right;
+                    ghosts[numGhosts].isMoving = 0;
+                    ghosts[numGhosts].color = numGhosts;
+                    ghosts[numGhosts].moveCounter = 0;
+                    
+                    maze3[i][j] = -1;
+                    numGhosts++;
+                }
+            }
         }
     }
 }
 
+int canGhostMoveInDirection(Ghost* ghost, int direction){
+    int newRow = ghost -> row;
+    int newCol = ghost -> col;
+
+    switch(direction){
+        case Left   : newCol--;
+        case Right  : newCol++;
+        case Up     : newRow++;
+        case Down   : newRow--;
+    }
+
+    return isValidPosition(newRow, newCol);
+}
+
+int getValidDirections(Ghost* ghost, int validDirs[4]){
+    int count = 0;
+    int directions[] = {Left, Right, Up, Down};
+    
+    for (int i = 0; i < 4; i++){
+        if (canGhostMoveInDirection(ghost ,directions[i])){
+            validDirs[count] = directions[i];
+            count++;
+        }
+    }
+
+    return count;
+}
+
+int chooseRandomDirection(Ghost* ghost) {
+    int validDirs[4];
+    int numValidDirs = getValidDirections(ghost, validDirs);
+    
+    if(numValidDirs == 0) {
+        return ghost->direction; // No valid moves, keep current direction
+    }
+    
+    // Prefer not to reverse direction (makes movement more natural)
+    int oppositeDir = -1;
+    switch(ghost->direction) {
+        case Left: oppositeDir = Right; break;
+        case Right: oppositeDir = Left; break;
+        case Up: oppositeDir = Down; break;
+        case Down: oppositeDir = Up; break;
+    }
+    
+    // Try to find directions that aren't opposite
+    int preferredDirs[4];
+    int numPreferred = 0;
+    
+    for (int i = 0; i < numValidDirs; i++){
+        if (validDirs[i] != oppositeDir){
+            preferredDirs[numPreferred] = validDirs[i];
+            numPreferred++;
+        }
+    }
+    
+    // If we have preferred directions, use them
+    if(numPreferred > 0) {
+        return preferredDirs[rand() % numPreferred];
+    }
+    
+    // Otherwise, use any valid direction
+    return validDirs[rand() % numValidDirs];
+}
+
+void startGhostMoving(Ghost* ghost, int direction) {
+    if(!canGhostMoveInDirection(ghost, direction)) {
+        return;
+    }
+    
+    ghost->direction = direction;
+    ghost->isMoving = 1;
+    
+    int cellwidth, cellheight;
+    if (level1page) {
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } else if (level2page) {
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+    } else if (level3page) {
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
+    }
+    
+    int newTargetX = ghost->pixelX;
+    int newTargetY = ghost->pixelY;
+    
+    switch (direction) {
+        case Left:
+            newTargetX -= cellwidth;
+            break;
+        case Right:
+            newTargetX += cellwidth;
+            break;
+        case Up:
+            newTargetY += cellheight;
+            break;
+        case Down:
+            newTargetY -= cellheight;
+            break;
+    }
+    
+    ghost->targetX = newTargetX;
+    ghost->targetY = newTargetY;
+}
+
+void updateGhostMovement(){
+    for(int i = 0; i < numGhosts; i++) {
+        Ghost* ghost = &ghosts[i];
+        
+        // If not moving, try to start moving
+        if(!ghost->isMoving) {
+            // Add some randomness to movement timing
+            ghost->moveCounter++;
+            if(ghost->moveCounter >= 10) { // Wait 10 frames before moving
+                int newDirection = chooseRandomDirection(ghost);
+                startGhostMoving(ghost, newDirection);
+                ghost->moveCounter = 0;
+            }
+            continue;
+        }
+        
+        // Calculate distance to target
+        int distanceX = ghost->targetX - ghost->pixelX;
+        int distanceY = ghost->targetY - ghost->pixelY;
+        int distance = abs(distanceX) + abs(distanceY);
+        
+        // If close enough to target, snap to it
+        if(distance <= GHOST_SPEED) {
+            ghost->pixelX = ghost->targetX;
+            ghost->pixelY = ghost->targetY;
+            ghost->isMoving = 0;
+            
+            // Update grid position
+            getGridPosition(ghost->pixelX, ghost->pixelY, &ghost->row, &ghost->col);
+            
+            // Immediately choose next direction for continuous movement
+            int newDirection = chooseRandomDirection(ghost);
+            startGhostMoving(ghost, newDirection);
+        }
+        else {
+            // Move towards target
+            int nextX = ghost->pixelX;
+            int nextY = ghost->pixelY;
+            
+            if(distanceX > 0) nextX += min(GHOST_SPEED, distanceX);
+            else if(distanceX < 0) nextX += max(-GHOST_SPEED, distanceX);
+            
+            if(distanceY > 0) nextY += min(GHOST_SPEED, distanceY);
+            else if(distanceY < 0) nextY += max(-GHOST_SPEED, distanceY);
+            
+            ghost->pixelX = nextX;
+            ghost->pixelY = nextY;
+        }
+    }
+}
+
+int checkGhostCollision() {
+    for(int i = 0; i < numGhosts; i++) {
+        Ghost* ghost = &ghosts[i];
+        
+        // Check if ghost and pacman are in same grid cell or very close
+        int distance = abs(ghost->pixelX - pacmanPixelX) + abs(ghost->pixelY - pacmanPixelY);
+        
+        if (level1page){
+            if(distance < 20) { // Collision threshold
+                return 1; // Collision detected
+            }
+        }
+        else if (level2page){
+            if (distance < 16)
+                return 1;
+        }
+        else{
+            if (distance < 12)
+                return 1;
+        }
+    }
+    return 0; // No collision
+}
+
+void drawGhosts() {
+    for(int i = 0; i < numGhosts; i++) {
+        Ghost* ghost = &ghosts[i];
+        
+    }
+}
 
 
 void drawHomepage()
@@ -1428,6 +1741,162 @@ void drawPacman() {
                 }
                 break;
         }
+    }
+
+    else if (level2page){
+        switch(pacmanDirection){
+            case Right:
+                if (movementflag >= 1 && movementflag < 20){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 20 && movementflag < 40){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 40 && movementflag < 60){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 60){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\1.png");
+                }
+                break;
+            
+            case Left:
+                if (movementflag >= 1 && movementflag < 20){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 20 && movementflag < 40){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 40 && movementflag < 60){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 60){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\1.png");
+                }
+                break;
+            case Up:
+                if (movementflag >= 1 && movementflag < 20){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 20 && movementflag < 40){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 40 && movementflag < 60){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 60){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\1.png");
+                }
+                break;
+            case Down:
+                if (movementflag >= 1 && movementflag < 20){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 20 && movementflag < 40){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 40 && movementflag < 60){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 60){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\1.png");
+                }
+                break;
+        }
+    }
+
+    else if (level3page){
+        switch(pacmanDirection){
+            case Right:
+                if (movementflag >= 1 && movementflag < 5){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\Hard1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 5 && movementflag < 10){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\Hard2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 10 && movementflag < 15){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\Hard3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 15){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\Hard1.png");
+                }
+                break;
+            
+            case Left:
+                if (movementflag >= 1 && movementflag < 5){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\Hard1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 5 && movementflag < 10){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\Hard2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 10 && movementflag < 15){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\Hard3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 15){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-left\\Hard1.png");
+                }
+                break;
+            case Up:
+                if (movementflag >= 1 && movementflag < 5){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\Hard1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 5 && movementflag < 10){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\Hard2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 10 && movementflag < 15){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\Hard3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 15){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-up\\Hard1.png");
+                }
+                break;
+            case Down:
+                if (movementflag >= 1 && movementflag < 5){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\Hard1.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 5 && movementflag < 10){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\Hard2.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 10 && movementflag < 15){
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\Hard3.png");
+                    movementflag++;
+                }
+                else if (movementflag >= 15){
+                    movementflag = 1; // Reset animation cycle
+                    iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\Hard1.png");
+                }
+                break;
+        }
     } 
 }
 
@@ -1514,6 +1983,7 @@ int main(int argc, char *argv[])
     glutInit(&argc, argv);
     iSetTimer(25, updatePacmanMovement);
     iSetTimer(60, drawPacman);
+    iSetTimer(25, updateGhostMovement);
     // place your own initialization codes here.
     iInitialize(screenWidth, screenHeight, "pacman");
     return 0;
