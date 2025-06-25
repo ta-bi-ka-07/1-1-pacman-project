@@ -21,7 +21,6 @@ int previousState = paused; // Variable to hold the previous state when paused
 
 void drawHomepage();
 void drawGamePage();
-void buttons();
 void drawExit();
 void drawLevelSelectionPage();
 void drawEnterNamePage();
@@ -40,6 +39,7 @@ void drawLevel1();
 void drawLevel2();
 void drawLevel3();
 void switchMusic();
+void generateMaze();
 // void pauseGame();
 // void resumeGame();
  //void drawMaze();
@@ -135,13 +135,10 @@ int targetPixelX, targetPixelY;
 int isMoving = 0;
 int pendingDirection = -1;
 int movementflag = 1;
-int mouthClose = 0, mouthOpen = 1;
 
 
 
-
-int maze1[15][25]=
-
+const int refMaze1[15][25] = 
 {
     {0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 2, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 2, 0},
@@ -160,9 +157,8 @@ int maze1[15][25]=
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-
-int maze2[20][33]=
- {
+const int refMaze2[20][33]
+{
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1},
@@ -185,8 +181,7 @@ int maze2[20][33]=
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
-
-int maze3[30][50]=
+const int refMaze3[30][50] =
 {
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -221,6 +216,33 @@ int maze3[30][50]=
 };
 
 
+int maze1[15][25];
+int maze2[20][33];
+int maze3[30][50];
+
+
+void generateMaze(){
+    if (level1page){
+        for (int i = 0; i < row1; i++){
+            for (int j = 0; j < col1; j++)
+                maze1[i][j] = refMaze1[i][j];
+            
+        }
+    }
+    else if (level2page){
+        for (int i = 0; i < row2; i++){
+            for (int j = 0; j < col2; j++)
+                maze2[i][j] = refMaze2[i][j];
+        }
+    }
+    else if (level3page){
+        for (int i = 0; i < row3; i++){
+            for (int j = 0; j < col3; j++)
+                maze3[i][j] = refMaze3[i][j];
+        }
+    }
+}
+
 
 
 void iDraw()
@@ -232,14 +254,16 @@ void iDraw()
     {
         drawHomepage();
     }
+
     else if(menuPage)
     {
         drawMenuPage();
     }
+
     else if (gamePage)
     
     {
-      drawGamePage();
+        drawGamePage();
     }
     else if (aboutPage)
     {
@@ -262,22 +286,17 @@ void iDraw()
      else if(level1page)
 
      {
-        InitializePacman();
-        InitializeGhosts();
         drawLevel1();
 
      }
      else if(level2page)
      {  
-        InitializePacman();
-        InitializeGhosts();
+
         drawLevel2();
         
      }
      else if(level3page)
      {
-        InitializePacman();
-        InitializeGhosts();
         drawLevel3();
      }
 
@@ -317,31 +336,26 @@ void iMouse(int button, int state, int mx, int my)
         {
             homepage = 0; 
             menuPage = 1; 
-            buttons(); 
         }
         else if (mx>=410 && mx<=635 && my>=250 && my<=315 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             instructionsPage = 1; 
-            buttons(); 
         }
         else if (mx>=410 && mx<=635 && my>=170 && my<=240 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             highScorePage = 1; 
-            buttons(); 
         }
         else if (mx>=410 && mx<=635 && my>=95 && my<=165 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             aboutPage= 1; 
-            buttons(); 
         }
         else if (mx>=410 && mx<=635 && my>=20 && my<=85 &&   button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             homepage = 0; 
             exitPage = 1; 
-            buttons(); 
         }
     }
     else if (menuPage == 1){
@@ -350,32 +364,16 @@ void iMouse(int button, int state, int mx, int my)
             menuPage = 0;
             EnterNamePage = 1;
             TextInputActive = true;
-            buttons();
-            // menuPage=0;
-            // gamePage = 1; 
-            // gameState(); // Set game state to running
-            // buttons(); // Draw buttons on the homepage
-            // Draw the game page
-            // Set game page to active
+            
             
         }
         else if (mx>=92 && mx<=345 && my>=345 && my<=400 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             menuPage=0;
             gamePage = 1; 
-            gameState(); // Set game state to running
-            buttons(); // Draw buttons on the homepage
-            // Draw the game page
-            // Set game page to active
+            gameState(); 
             
         }
-        // else if (menuPage==1 && mx>=92 && mx<=345 && my>=245 && my<=300 && button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
-        // {
-        //     menuPage=0;
-        //     gamePage = 1; 
-        //     gameState(); // Set game state to running
-        //     buttons(); 
-        // }
         else if (mx>=92 && mx<=345 && my>=145 && my<=200 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
         {
             menuPage=0;
@@ -396,20 +394,26 @@ void iMouse(int button, int state, int mx, int my)
         }
         else if (mx >= 98 && mx <= 282 && my >= 396 && my <= 454 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
-            InitializePacman();
             level1page = 1;
+            generateMaze();
+            InitializePacman();
+            InitializeGhosts();
             switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 295 && my <= 355 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
-            InitializePacman();
             level2page = 1;
+            generateMaze();
+            InitializePacman();
+            InitializeGhosts();
             switchMusic();
         }
         else if (mx >= 98 && mx <= 282 && my >= 197 && my <= 255 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
             levelSelectionPage = 0;
-            InitializePacman();
             level3page = 1;
+            generateMaze();
+            InitializePacman();
+            InitializeGhosts();
             switchMusic();
         }
     }
@@ -489,7 +493,6 @@ void iKeyboard(unsigned char key)
                 if (!(menuMusicON))
                     switchMusic();
                     
-                buttons(); 
                 gameState(); // Draw the menu page
                 break;
             }
@@ -507,7 +510,6 @@ void iKeyboard(unsigned char key)
                 homepage = 1;
                 if (!(menuMusicON))
                     switchMusic(); // Set homepage to active
-                buttons();
                 break;
             }
             else
@@ -536,14 +538,12 @@ void iKeyboard(unsigned char key)
                 {
                     gamestate = previousState; // Resume the game from the previous state
                     gamePage = 1; // Set game page to active
-                    buttons(); // Draw buttons on the homepage
                     gameState(); // Draw the game page
                 }
                 else if (gamestate == menu)
                 {
                     gamestate = running; // Resume the game from menu
                     gamePage = 1; // Set game page to active
-                    buttons(); // Draw buttons on the homepage
                     gameState(); // Draw the game page
                 }
             }
@@ -677,194 +677,6 @@ else if (gamestate == paused)
     //  
 
 }
-}
-
-void buttons()
-{
-    // Draw buttons here if needed
-    // For example, you can draw a button for starting the game or exiting
-    if(homepage)
-    {
-        
-        gamePage = 0;
-        aboutPage=0;
-        menuPage=0;
-        instructionsPage=0;
-        exitPage=0;
-        highScorePage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-         
-        iDraw();
-
-         // Reset game page when on homepage
-    }
-       else if(menuPage)
-    {
-        
-        gamePage = 0;
-        aboutPage=0;
-        homepage=0;
-        instructionsPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-
-        exitPage=0;
-        highScorePage=0;
-        iDraw();
-
-         // Reset game page when on homepage
-    }
-
-
-
-    else if(gamePage)
-    {
-       
-        homepage = 0;
-        aboutPage=0;
-        menuPage=0;
-        instructionsPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-        exitPage=0;
-        highScorePage=0;
-         iDraw();
-        
-        // Draw game page buttons
- 
-    }
-    else if(aboutPage)
-    {
-        homepage = 0;
-        gamePage=0;
-        menuPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-
-        instructionsPage=0;
-        exitPage=0;
-        highScorePage=0;
-
-
-        iDraw();
-    }
-    else if(instructionsPage)
-    {
-
-        homepage = 0;
-        menuPage=0;
-        aboutPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-        gamePage=0;
-        exitPage=0;
-        highScorePage=0;
-        iDraw();
-    }
-    else if(exitPage)
-    
-    {
-        homepage = 0;
-        menuPage=0;
-        aboutPage=0;
-        instructionsPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-
-        gamePage=0;
-        highScorePage=0;
-        iDraw();
-    }
-    else if (EnterNamePage){
-        homepage = 0;
-        levelSelectionPage = 0;
-        menuPage=0;
-        aboutPage=0;
-        instructionsPage=0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-        gamePage=0;
-        highScorePage=0;
-        exitPage = 0;
-        
-        iDraw();
-    }
-    else if (levelSelectionPage){
-        homepage = 0;
-        menuPage=0;
-        aboutPage=0;
-        instructionsPage=0;
-        level1page = 0;
-        level2page = 0;
-        level3page = 0;
-        gamePage=0;
-        highScorePage=0;
-        exitPage = 0;
-        iDraw();
-    }
-    else if(level1page)
-    {
-        homepage = 0;
-        menuPage=0;
-        aboutPage=0;
-        instructionsPage=0;
-        levelSelectionPage = 0;
-        level2page = 0;
-        level3page = 0;
-        gamePage=0;
-        exitPage=0;
-        highScorePage=0;
-
-        iDraw();
-    }
-    else if(level2page)
-    {
-        homepage = 0;
-        menuPage=0;
-        aboutPage=0;
-        instructionsPage=0;
-        levelSelectionPage = 0;
-        level1page = 0;
-        level3page = 0;
-        gamePage=0;
-        exitPage=0;
-        highScorePage=0;
-
-        iDraw();
-    }
-    else if(level3page)
-    {
-         homepage = 0;
-         menuPage=0;
-         aboutPage=0;
-         instructionsPage=0;
-         levelSelectionPage = 0;
-         level1page = 0;
-         level2page = 0;
-
-         gamePage=0;
-         exitPage=0;
-         highScorePage=0;
-
-         iDraw();
-    
-    
-    
-    }
 }
 
 
@@ -1457,10 +1269,10 @@ int canGhostMoveInDirection(Ghost* ghost, int direction){
     int newCol = ghost -> col;
 
     switch(direction){
-        case Left   : newCol--;
-        case Right  : newCol++;
-        case Up     : newRow++;
-        case Down   : newRow--;
+        case Left   : newCol--; break;
+        case Right  : newCol++; break;
+        case Up     : newRow++; break;
+        case Down   : newRow--; break;
     }
 
     return isValidPosition(newRow, newCol);
@@ -1591,7 +1403,8 @@ void updateGhostMovement(){
             
             // Immediately choose next direction for continuous movement
             int newDirection = chooseRandomDirection(ghost);
-            startGhostMoving(ghost, newDirection);
+            if (canGhostMoveInDirection(ghost, newDirection))
+                startGhostMoving(ghost, newDirection);
         }
         else {
             // Move towards target
@@ -1637,7 +1450,7 @@ int checkGhostCollision() {
 void drawGhosts() {
     for(int i = 0; i < numGhosts; i++) {
         Ghost* ghost = &ghosts[i];
-        
+        iShowImage(ghost -> pixelX, ghost -> pixelY,  "Sprites\\ghosts\\blinky.png");
     }
 }
 
@@ -1918,7 +1731,7 @@ void drawInstructions()
 {
     iSetColor(0, 0, 0); // black color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\background.png");
+    iShowImage(0, 0, "images\\background.png");
     // Add instructions drawing code here
     // For example, draw the instructions text or images
     iSetColor(255, 255, 255); // white color for text
@@ -1937,7 +1750,7 @@ void drawAbout()
 {
     iSetColor(0, 0, 0); // black color
     iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\background.png");
+    iShowImage(0, 0, "images\\background.png");
     // Add about page drawing code here
     // For example, draw the about text or images
     iSetColor(255, 255, 255); // white color for text
@@ -1959,7 +1772,7 @@ void drawAbout()
 void drawMenuPage()
 {
    // iSetColor(0, 0, 255); // blue color
-    iShowImage(0, 0, "E:\\1-1-pacman-project\\images\\menupage.jpg");
+    iShowImage(0, 0, "images\\menupage.jpg");
     iSetColor(255, 255, 255);
     iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(655, 52, "Press Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
