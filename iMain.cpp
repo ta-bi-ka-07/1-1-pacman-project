@@ -87,6 +87,7 @@ void startGhostMoving(Ghost* ghost, int direction);
 void updateGhostMovement();
 int checkGhostCollision();
 void drawGhosts();
+void alignGhostToGrid(Ghost* ghost);
 
 
 int homepageImage; // Variable to hold the homepage image
@@ -1271,8 +1272,10 @@ int canGhostMoveInDirection(Ghost* ghost, int direction){
     switch(direction){
         case Left   : newCol--; break;
         case Right  : newCol++; break;
-        case Up     : newRow++; break;
-        case Down   : newRow--; break;
+        case Up     : newRow--; break;
+        case Down   : newRow++; break;
+        default:      
+            return 0;
     }
 
     return isValidPosition(newRow, newCol);
@@ -1292,6 +1295,7 @@ int getValidDirections(Ghost* ghost, int validDirs[4]){
     return count;
 }
 
+// Enhanced direction choosing with debugging
 int chooseRandomDirection(Ghost* ghost) {
     int validDirs[4];
     int numValidDirs = getValidDirections(ghost, validDirs);
@@ -1333,7 +1337,9 @@ void startGhostMoving(Ghost* ghost, int direction) {
     if(!canGhostMoveInDirection(ghost, direction)) {
         return;
     }
-    
+
+    alignGhostToGrid(ghost);
+
     ghost->direction = direction;
     ghost->isMoving = 1;
     
@@ -1367,8 +1373,15 @@ void startGhostMoving(Ghost* ghost, int direction) {
             break;
     }
     
-    ghost->targetX = newTargetX;
-    ghost->targetY = newTargetY;
+     // Double-check the target position is valid
+     if (isPixelPositionValid(newTargetX, newTargetY)) {
+        ghost->targetX = newTargetX;
+        ghost->targetY = newTargetY;
+    } else {
+        // If target is invalid, stop moving
+        ghost->isMoving = 0;
+        alignGhostToGrid(ghost);
+    }
 }
 
 void updateGhostMovement(){
@@ -1403,11 +1416,10 @@ void updateGhostMovement(){
             
             // Immediately choose next direction for continuous movement
             int newDirection = chooseRandomDirection(ghost);
-            if (canGhostMoveInDirection(ghost, newDirection))
-                startGhostMoving(ghost, newDirection);
+            startGhostMoving(ghost, newDirection);
         }
         else {
-            // Move towards target
+            // Move towards target with validation
             int nextX = ghost->pixelX;
             int nextY = ghost->pixelY;
             
@@ -1417,8 +1429,15 @@ void updateGhostMovement(){
             if(distanceY > 0) nextY += min(GHOST_SPEED, distanceY);
             else if(distanceY < 0) nextY += max(-GHOST_SPEED, distanceY);
             
-            ghost->pixelX = nextX;
-            ghost->pixelY = nextY;
+            // Validate next position before moving
+            if(isPixelPositionValid(nextX, nextY)) {
+                ghost->pixelX = nextX;
+                ghost->pixelY = nextY;
+            } else {
+                // Hit a wall, stop and realign
+                ghost->isMoving = 0;
+                alignGhostToGrid(ghost);
+            }
         }
     }
 }
@@ -1454,6 +1473,26 @@ void drawGhosts() {
     }
 }
 
+void alignGhostToGrid(Ghost* ghost){
+    int cellwidth, cellheight;
+    
+    if (level1page) {
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+        ghost->pixelX = ghost->col * cellwidth + 8;
+        ghost->pixelY = screenHeight - (ghost->row + 1) * cellheight + 8;
+    } else if (level2page) {
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+        ghost->pixelX = ghost->col * cellwidth + 8;
+        ghost->pixelY = screenHeight - (ghost->row + 1) * cellheight + 8;
+    } else if (level3page) {
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
+        ghost->pixelX = ghost->col * cellwidth + 5;
+        ghost->pixelY = screenHeight - (ghost->row + 1) * cellheight + 5;
+    }
+}
 
 void drawHomepage()
 {
@@ -1795,7 +1834,7 @@ int main(int argc, char *argv[])
     PlaySound("music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
     glutInit(&argc, argv);
     iSetTimer(25, updatePacmanMovement);
-    iSetTimer(60, drawPacman);
+    iSetTimer(16, drawPacman);
     iSetTimer(25, updateGhostMovement);
     // place your own initialization codes here.
     iInitialize(screenWidth, screenHeight, "pacman");
