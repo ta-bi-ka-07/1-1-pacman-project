@@ -48,19 +48,24 @@ void generateMaze();
 
 
 
-void pacmanMove();
-void ghostMove();
 int isValidPosition(int row, int col);
-void InitializePacman();
-void drawPacman();
+
 void getGridPosition(int pixelX, int pixelY, int* row, int* col);
 int canMoveInDirection(int direction);
 void startMoving(int direction);
 void updatePacmanMovement();
-int isPacmanAlignedWithGrid();
-void alignPacmanToGrid();
-int isPixelPositionValid(int pixelX, int pixelY);
 int canStartMoving(int direction);
+
+int isPixelPositionValid(int pixelX, int pixelY);
+void alignPacmanToGrid();
+int canPacmanMoveinDirection(int direction);
+void PixelToGridPosition(int pixelX, int pixelY, int* row, int* col);
+int isPacmanAlignedWithGrid();
+void InitializePacman();
+void drawPacman();
+void movePacman();
+
+
 
 
 #define MAX_GHOSTS 4
@@ -111,10 +116,7 @@ int row3 = 30;
 int col3 = 50;
 int cellwidth;
 int cellheight;
-int pacmanX, pacmanY;
-int levelWidth, levelHeight;
-
-
+ 
 char playerName[25] = "";
 int namelength = 0;
 bool TextInputActive = true;
@@ -128,6 +130,7 @@ int inputBoxHeight = 30;
 #define Up 2
 #define Down 3
 #define pacmanSpeed 2
+
 
 int pacmanDirection = Right;
 int pacmanRow, pacmanCol;
@@ -288,17 +291,19 @@ void iDraw()
 
      {
         drawLevel1();
+        drawPacman();
 
      }
      else if(level2page)
      {  
 
         drawLevel2();
-        
+        drawPacman();
      }
      else if(level3page)
      {
         drawLevel3();
+        drawPacman();
      }
 
 }
@@ -624,28 +629,22 @@ void iSpecialKeyboard(unsigned char key)
     {
         if (level1page || level2page || level3page){
             int newDirection = pacmanDirection;
-            switch (key) {
-            case GLUT_KEY_LEFT: newDirection = Left; break;
-            case GLUT_KEY_RIGHT: newDirection = Right; break;
-            case GLUT_KEY_UP: newDirection = Up; break;
-            case GLUT_KEY_DOWN: newDirection = Down; break;
+            switch(key){
+                case GLUT_KEY_LEFT  :   newDirection = Left;    break;
+                case GLUT_KEY_RIGHT :   newDirection = Right;   break;
+                case GLUT_KEY_UP    :   newDirection = Up;      break;
+                case GLUT_KEY_DOWN  :   newDirection = Down;    break;
             }
-            
-            // If Pacman is currently moving, store as pending direction
-            if (isMoving) {
-                pendingDirection = newDirection;
-            }
-            // If Pacman is not moving, try to start moving immediately
-            else if (canMoveInDirection(newDirection)) {
+
+            if (canPacmanMoveinDirection(newDirection)){
                 pacmanDirection = newDirection;
-                startMoving(pacmanDirection);
+                pendingDirection = -1;
             }
-            // If can't move in new direction, store as pending
-            else {
+
+            else{
                 pendingDirection = newDirection;
             }
         }
-        break;
     }
     default:
         break;
@@ -815,103 +814,7 @@ void switchMusic(){
     }
 }
 
-// Function to check if Pacman is aligned with the grid
-int isPacmanAlignedWithGrid() {
-    int cellwidth, cellheight;
-    
-    // Get cell dimensions based on current level
-    if (level1page) {
-        cellwidth = screenWidth / col1;
-        cellheight = screenHeight / row1;
-    } else if (level2page) {
-        cellwidth = screenWidth / col2;
-        cellheight = screenHeight / row2;
-    } else if (level3page) {
-        cellwidth = screenWidth / col3;
-        cellheight = screenHeight / row3;
-    } else {
-        return 0; // Not in a valid level
-    }
-    
-    // Calculate what the centered position should be for current grid cell
-    int expectedX = pacmanCol * cellwidth + cellwidth/2;
-    int expectedY = screenHeight - (pacmanRow + 1) * cellheight + cellheight/2;
-    
-    // Check if Pacman is close enough to the center (within a small tolerance)
-    int tolerance = pacmanSpeed; // Allow some tolerance based on movement speed
-    
-    return (abs(pacmanPixelX - expectedX) <= tolerance && 
-            abs(pacmanPixelY - expectedY) <= tolerance);
-}
 
-//Aligns Pacman to the Grid Coordinates, helps with changing directions
-void alignPacmanToGrid() {
-    int cellwidth, cellheight;
-    
-    if (level1page) {
-        cellwidth = screenWidth / col1;
-        cellheight = screenHeight / row1;
-    } else if (level2page) {
-        cellwidth = screenWidth / col2;
-        cellheight = screenHeight / row2;
-    } else if (level3page) {
-        cellwidth = screenWidth / col3;
-        cellheight = screenHeight / row3;
-    }
-    
-    if (level1page || level2page){
-        pacmanPixelX = pacmanCol*cellwidth + 8;
-        pacmanPixelY = screenHeight-(pacmanRow+1)*cellheight + 8;
-    }
-    else{
-        pacmanPixelX = pacmanCol*cellwidth + 5;
-        pacmanPixelY = screenHeight-(pacmanRow+1)*cellheight + 5;
-    }
-
-}
-
-// Give Pixel Coordinates to turn into Grid Position (Row and Column)
-void getGridPosition(int pixelX, int pixelY, int* row, int* col){
-    if (level1page){
-        cellwidth = screenWidth / col1;
-        cellheight = screenHeight / row1;
-        
-        *col = pixelX / cellwidth;
-        *row = (screenHeight - pixelY) / cellheight;
-        
-        // Clamp to valid range
-        if (*row < 0) *row = 0;
-        if (*row >= row1) *row = row1 - 1;
-        if (*col < 0) *col = 0;
-        if (*col >= col1) *col = col1 - 1;
-    }
-    else if (level2page){
-        cellwidth = screenWidth / col2;
-        cellheight = screenHeight / row2;
-        
-        *col = pixelX / cellwidth;
-        *row = (screenHeight - pixelY) / cellheight;
-        
-        // Clamp to valid range
-        if (*row < 0) *row = 0;
-        if (*row >= row2) *row = row2 - 1;
-        if (*col < 0) *col = 0;
-        if (*col >= col2) *col = col2 - 1;
-    }
-    else if (level3page){
-        cellwidth = screenWidth / col3;
-        cellheight = screenHeight / row3;
-        
-        *col = pixelX / cellwidth;
-        *row = (screenHeight - pixelY) / cellheight;
-        
-        // Clamp to valid range
-        if (*row < 0) *row = 0;
-        if (*row >= row3) *row = row3 - 1;
-        if (*col < 0) *col = 0;
-        if (*col >= col3) *col = col3 - 1;
-    }
-}
 
 void InitializePacman(){
     // Find Pac-Man spawn position (value 4 in maze)
@@ -989,189 +892,239 @@ void InitializePacman(){
     }
 }
 
-int isValidPosition(int row, int col){
-   if (level1page){
-        if (row < 0 || row >= row1 || col < 0 || col >= col1){
-            return 0;
-        }
-        return maze1[row][col] != 1;
-   }
-   if (level2page){
-        if (row < 0 || row >= row2 || col < 0 || col >= col2){
-            return 0;
-        }
-        return maze2[row][col] != 1;
-   }
-   if (level3page){
-        if (row < 0 || row >= row3 || col < 0 || col >= col3){
-            return 0;
-        }
-        return maze3[row][col] != 1;
-   }
-}
 
-// Check if Pac-Man can move in a direction from current position
-int canMoveInDirection(int direction) {
-    int newRow = pacmanRow;
-    int newCol = pacmanCol;
-    
-    switch (direction) {
-        case Left:  newCol--; break;
-        case Right: newCol++; break;
-        case Up:    newRow--; break;
-        case Down:  newRow++; break;
+void PixelToGridPosition(int pixelX, int pixelY, int* row, int* col){
+    int cellwidth, cellheight;
+    if (level1page){
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+        *row = (screenHeight - pixelY) / cellheight;
+        *col = pixelX/cellwidth;
+                // Clamp to valid range
+        if (*row < 0) 
+            *row = 0;
+        if (*row >= row1) 
+            *row = row1 - 1;
+        if (*col < 0) 
+            *col = 0;
+        if (*col >= col1) 
+            *col = col1 - 1;
     }
-    
-    return isValidPosition(newRow, newCol);
+   else if (level2page){
+       cellwidth = screenWidth / col2;
+       cellheight = screenHeight / row2;
+       *row = (screenHeight - pixelY) / cellheight;
+       *col = pixelX/cellwidth;
+
+        if (*row < 0) 
+            *row = 0;
+        if (*row >= row2) 
+            *row = row2 - 1;
+        if (*col < 0) 
+            *col = 0;
+        if (*col >= col2) 
+            *col = col2 - 1;
+   }
+   else if (level3page){
+       cellwidth = screenWidth / col3;
+       cellheight = screenHeight / row3;
+       *row = (screenHeight - pixelY) / cellheight;
+       *col = pixelX/cellwidth;
+
+        if (*row < 0) 
+            *row = 0;
+        if (*row >= row3) 
+            *row = row3 - 1;
+        if (*col < 0) 
+            *col = 0;
+        if (*col >= col3) 
+            *col = col3 - 1;
+   }
+
 }
 
+int canPacmanMoveinDirection(int direction){
+    int newRow = pacmanRow, newCol = pacmanCol;
+    switch(direction){
+        case Right: newCol++; break;
+        case Left : newCol--; break;
+        case Up   : newRow--; break;
+        case Down : newRow++; break;
+    }
+    if (level1page)
+        return (newRow >= 0 && newRow < row1) && (newCol >= 0 && newCol < col1) && maze1[newRow][newCol] != 1;
+    else if (level2page)
+        return (newRow >= 0 && newRow < row2) && (newCol >= 0 && newCol < col2) && maze2[newRow][newCol] != 1;
+    else if (level3page)
+        return (newRow >= 0 && newRow < row3) && (newCol >= 0 && newCol < col3) && maze3[newRow][newCol] != 1;
 
-void startMoving(int direction) {
-    if (canStartMoving(direction)) {
-        pacmanDirection = direction;
-        isMoving = 1;
+    return 0;
+}
 
-        if (level1page) {
-            cellwidth = screenWidth / col1;
-            cellheight = screenHeight / row1;
-        } else if (level2page) {
+int isPacmanAlignedToGrid(){
+    int cellwidth, cellheight;
+    if (level1page){
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } 
+    else if (level2page){
             cellwidth = screenWidth / col2;
             cellheight = screenHeight / row2;
-        } else if (level3page) {
+    }
+    else if (level3page){
             cellwidth = screenWidth / col3;
             cellheight = screenHeight / row3;
+    }
+    int expectedX, expectedY;
+    if (level1page){
+        expectedX = pacmanCol * cellwidth + 8;
+        expectedY = screenHeight - (pacmanRow + 1) * cellheight + 8;
+    }
+    else if (level2page || level3page){
+        expectedX = pacmanCol * cellwidth + 5;
+        expectedY = screenHeight - (pacmanRow + 1) * cellheight + 5;
+    }
+
+    int permissible = pacmanSpeed;
+    return abs(pacmanPixelX - expectedX) <= permissible && abs(pacmanPixelY - expectedY) <= permissible;
+}
+
+void alignPacmanToGrid(){
+    int cellwidth, cellheight;
+    if (level1page){
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } 
+    else if (level2page){
+            cellwidth = screenWidth / col2;
+            cellheight = screenHeight / row2;
+    }
+    else if (level3page){
+            cellwidth = screenWidth / col3;
+            cellheight = screenHeight / row3;
+    }
+    if (level1page){
+        pacmanPixelX = pacmanCol * cellwidth + 8;
+        pacmanPixelY = screenHeight - (pacmanRow + 1) * cellheight + 8;
+    }
+    else if (level2page || level3page){
+        pacmanPixelX = pacmanCol * cellwidth + 5;
+        pacmanPixelY = screenHeight - (pacmanRow + 1) * cellheight + 5;
+    }
+    
+}
+
+
+int isPixelPositionValid(int pixelX, int pixelY){
+    int targetRow, targetCol;
+    PixelToGridPosition(pixelX, pixelY, &targetRow, &targetCol);//Check if not outside of screenwidth or height
+
+    if (level1page) {
+        return (targetRow >= 0 && targetRow < row1) && (targetCol >= 0 && targetCol < col1) && maze1[targetRow][targetCol] != 1 && (pixelX > 0 && pixelX <= screenWidth) && (pixelY > 0 && pixelY <= screenHeight);
+    }
+    else if (level2page) {
+        return (targetRow >= 0 && targetRow < row2) && (targetCol >= 0 && targetCol < col2) && maze2[targetRow][targetCol] != 1 && (pixelX > 0 && pixelX <= screenWidth) && (pixelY > 0 && pixelY <= screenHeight);
+    }
+    else if (level3page) {
+        return (targetRow >= 0 && targetRow < row3) && (targetCol >= 0 && targetCol < col3) && maze3[targetRow][targetCol] != 1 && (pixelX > 0 && pixelX <= screenWidth) && (pixelY > 0 && pixelY <= screenHeight);
+    }
+    return 0;
+
+}
+
+void movePacman(){
+    int cellwidth, cellheight;
+    if (level1page){
+        cellwidth = screenWidth / col1;
+        cellheight = screenHeight / row1;
+    } 
+    else if (level2page){
+        cellwidth = screenWidth / col2;
+        cellheight = screenHeight / row2;
+    }
+    else if (level3page){
+        cellwidth = screenWidth / col3;
+        cellheight = screenHeight / row3;
+    }
+
+
+    int newTargetX = pacmanPixelX, newTargetY = pacmanPixelY;
+    if (isPacmanAlignedToGrid()){
+        if (canPacmanMoveinDirection(pendingDirection) && pendingDirection != -1){
+            pacmanDirection = pendingDirection;
+            pendingDirection = -1;
         }
-        
-        int newTargetX = pacmanPixelX;
-        int newTargetY = pacmanPixelY;
-        
-        switch (direction) {
-            case Left:
-                newTargetX -= cellwidth;
-                break;
-            case Right:
-                newTargetX += cellwidth;
-                break;
-            case Up:
-                newTargetY += cellheight;
-                break;
-            case Down:
-                newTargetY -= cellheight;
-                break;
+        switch(pacmanDirection){
+        case Right: newTargetX = pacmanPixelX + cellwidth; break;
+        case Left : newTargetX = pacmanPixelX - cellwidth; break;
+        case Up   : newTargetY = pacmanPixelY + cellheight; break;
+        case Down : newTargetY = pacmanPixelY - cellheight; break;
         }
-        
-        if (isPixelPositionValid(newTargetX, newTargetY)) {
+
+        if (isPixelPositionValid(newTargetX, newTargetY)){
             targetPixelX = newTargetX;
             targetPixelY = newTargetY;
-        } else {
-            isMoving = 0;
+        }
+        else{
+            targetPixelX = pacmanPixelX;
+            targetPixelY = pacmanPixelY;
+            alignPacmanToGrid();
+            return;
         }
     }
 
-}
+    int nextX = pacmanPixelX, nextY = pacmanPixelY;
 
-//Turns Pixel Coordinates into Grid Coordinates and checks if they're valid
-int isPixelPositionValid(int pixelX, int pixelY) {
-    int row, col;
-    getGridPosition(pixelX, pixelY, &row, &col);
-    return isValidPosition(row, col);
-}
+    if (pacmanPixelX < targetPixelX){
+        nextX = min(pacmanPixelX + pacmanSpeed, targetPixelX);
+    }
+    else if (pacmanPixelX > targetPixelX){
+        nextX = max(pacmanPixelX - pacmanSpeed, targetPixelX);
+    }
 
-int canStartMoving(int direction) {
-    if (!isPacmanAlignedWithGrid()) {
+    if (pacmanPixelY > targetPixelY){
+        nextY = max(pacmanPixelY - pacmanSpeed, targetPixelY);
+    }
+    else if (pacmanPixelY < targetPixelY){
+        nextY = min(pacmanPixelY + pacmanSpeed, targetPixelY);
+    }
+
+    if (isPixelPositionValid(nextX, nextY)){
+        pacmanPixelX = nextX;
+        pacmanPixelY = nextY;
+    }
+    else{
         alignPacmanToGrid();
+        targetPixelX = pacmanPixelX;
+        targetPixelY = pacmanPixelY;
     }
-    
-    return canMoveInDirection(direction);
-}
 
-void updatePacmanMovement() {
-    if (!isMoving) {
-        // Not moving, check if we should continue in current direction
-        if (canMoveInDirection(pacmanDirection)) {
-            startMoving(pacmanDirection);
-        }
-        return;
-    }
-    
-    // Calculate distance to target
-    int distanceX = targetPixelX - pacmanPixelX;
-    int distanceY = targetPixelY - pacmanPixelY;
-    int distance = abs(distanceX) + abs(distanceY);
-    
-    // If we're close enough to target, snap to it
-    if (distance <= pacmanSpeed) {
-        // Before snapping, verify the target position is still valid
-        if (isPixelPositionValid(targetPixelX, targetPixelY)) {
-            pacmanPixelX = targetPixelX;
-            pacmanPixelY = targetPixelY;
-            isMoving = 0; //Keeps moving in that direction until change
-            
-            // Update grid position
-            getGridPosition(pacmanPixelX, pacmanPixelY, &pacmanRow, &pacmanCol);
-            
-            // Eat food/pellets at new position
-            if (level1page) {
-                if (maze1[pacmanRow][pacmanCol] == 2) {
+    PixelToGridPosition(pacmanPixelX, pacmanPixelY, &pacmanRow, &pacmanCol);
+    if (level1page){
+        if (maze1[pacmanRow][pacmanCol] == 2){
                     maze1[pacmanRow][pacmanCol] = -1;  // Remove power pellet
-                } else if (maze1[pacmanRow][pacmanCol] == 0) {
+        } 
+        else if (maze1[pacmanRow][pacmanCol] == 0){
                     maze1[pacmanRow][pacmanCol] = -1;  // Remove dot
-                }
-            }
-            else if (level2page) {
-                if (maze2[pacmanRow][pacmanCol] == 2) {
-                    maze2[pacmanRow][pacmanCol] = -1;  // Remove power pellet
-                } else if (maze2[pacmanRow][pacmanCol] == 0) {
-                    maze2[pacmanRow][pacmanCol] = -1;  // Remove dot
-                }
-            }
-            else if (level3page) {
-                if (maze3[pacmanRow][pacmanCol] == 2) {
-                    maze3[pacmanRow][pacmanCol] = -1;  // Remove power pellet
-                } else if (maze3[pacmanRow][pacmanCol] == 0) {
-                    maze3[pacmanRow][pacmanCol] = -1;  // Remove dot
-                }
-            }
-            // Check for pending direction changes
-            if (pendingDirection != -1 && canMoveInDirection(pendingDirection)) {
-                pacmanDirection = pendingDirection;
-                startMoving(pendingDirection);
-                pendingDirection = -1;
-            }
-            // Otherwise continue in current direction if possible
-            else if (canMoveInDirection(pacmanDirection)) {
-                startMoving(pacmanDirection);
-            }
-            else {
-            // Target position became invalid, stop and align
-            isMoving = 0;
-            alignPacmanToGrid();
-            }
-            }
-        }    
-        else {
-        // Calculate next position with smaller steps for better collision detection
-        int stepSize = min(pacmanSpeed, distance);
-        int nextX = pacmanPixelX;
-        int nextY = pacmanPixelY;
-        
-        // Move in smaller increments to avoid skipping through walls
-        if (distanceX > 0) nextX += min(stepSize, distanceX);
-        else if (distanceX < 0) nextX += max(-stepSize, distanceX);
-        
-        if (distanceY > 0) nextY += min(stepSize, distanceY);
-        else if (distanceY < 0) nextY += max(-stepSize, distanceY);
-        
-        // Validate the next position before moving
-        if (isPixelPositionValid(nextX, nextY)) {
-            pacmanPixelX = nextX;
-            pacmanPixelY = nextY;
-        } else {
-            // Hit a wall, stop moving and align to grid
-            isMoving = 0;
-            alignPacmanToGrid();
-            }
         }
+    }
+    else if (level2page){
+        if (maze2[pacmanRow][pacmanCol] == 2) {
+                    maze2[pacmanRow][pacmanCol] = -1;  // Remove power pellet
+        }
+        else if (maze2[pacmanRow][pacmanCol] == 0) {
+                    maze2[pacmanRow][pacmanCol] = -1;  // Remove dot
+        }
+    }
+    else if (level3page){
+        if (maze3[pacmanRow][pacmanCol] == 2) {
+                    maze3[pacmanRow][pacmanCol] = -1;  // Remove power pellet
+        } 
+        else if (maze3[pacmanRow][pacmanCol] == 0) {
+                    maze3[pacmanRow][pacmanCol] = -1;  // Remove dot
+        }
+    }
+
 }
 
 
@@ -1278,7 +1231,14 @@ int canGhostMoveInDirection(Ghost* ghost, int direction){
             return 0;
     }
 
-    return isValidPosition(newRow, newCol);
+    if (level1page)
+        return (newRow >= 0 && newRow < row1) && (newCol >= 0 && newCol < col1) && maze1[newRow][newCol] != 1;
+    else if (level2page)
+        return (newRow >= 0 && newRow < row2) && (newCol >= 0 && newCol < col2) && maze2[newRow][newCol] != 1;
+    else if (level3page)
+        return (newRow >= 0 && newRow < row3) && (newCol >= 0 && newCol < col3) && maze3[newRow][newCol] != 1;
+
+    return 0;
 }
 
 int getValidDirections(Ghost* ghost, int validDirs[4]){
@@ -1295,7 +1255,6 @@ int getValidDirections(Ghost* ghost, int validDirs[4]){
     return count;
 }
 
-// Enhanced direction choosing with debugging
 int chooseRandomDirection(Ghost* ghost) {
     int validDirs[4];
     int numValidDirs = getValidDirections(ghost, validDirs);
@@ -1387,7 +1346,9 @@ void startGhostMoving(Ghost* ghost, int direction) {
 void updateGhostMovement(){
     for(int i = 0; i < numGhosts; i++) {
         Ghost* ghost = &ghosts[i];
-        
+        float ghostX = ghost->pixelX;
+        float ghosty = ghost->pixelY;
+
         // If not moving, try to start moving
         if(!ghost->isMoving) {
             // Add some randomness to movement timing
@@ -1412,7 +1373,7 @@ void updateGhostMovement(){
             ghost->isMoving = 0;
             
             // Update grid position
-            getGridPosition(ghost->pixelX, ghost->pixelY, &ghost->row, &ghost->col);
+            PixelToGridPosition(ghost->pixelX, ghost->pixelY, &ghost->row, &ghost->col);
             
             // Immediately choose next direction for continuous movement
             int newDirection = chooseRandomDirection(ghost);
@@ -1440,6 +1401,7 @@ void updateGhostMovement(){
             }
         }
     }
+    
 }
 
 int checkGhostCollision() {
@@ -1494,32 +1456,13 @@ void alignGhostToGrid(Ghost* ghost){
     }
 }
 
-void drawHomepage()
-{
-
-    iSetColor(0, 0, 0); // black color
-    iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
-    iShowImage(0, 0, "images\\front page.png");
-    iSetColor (255, 255, 0); // yellow color for text
-    iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
-    iText(655, 52, "PRESS Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
-
-
-}
-
-void drawEnterNamePage(){
-    iSetColor(255, 255, 255);
-    iFilledRectangle(0, 0, screenWidth, screenHeight);
-    iShowImage(0, 0, "images\\EnterNamePage.jpeg");
-    iText(inputBoxX, inputBoxY - 10, playerName, GLUT_BITMAP_TIMES_ROMAN_24);
-
-
-}
 
 void drawPacman() {
+    printf("Pacman: %d, %d\n", pacmanPixelX, pacmanPixelY);
     if (level1page){
         switch(pacmanDirection){
             case Right:
+                printf("~~~~not right~~~~~~~~");
                 if (movementflag >= 1 && movementflag < 20){
                     iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-right\\Easy1.png");
                     movementflag++;
@@ -1592,6 +1535,9 @@ void drawPacman() {
                     iShowImage(pacmanPixelX, pacmanPixelY, "Sprites\\pacman-down\\Easy1.png");
                 }
                 break;
+
+
+            
         }
     }
 
@@ -1752,7 +1698,16 @@ void drawPacman() {
     } 
 }
 
+void drawHomepage()
+{
 
+    iSetColor(0, 0, 0); // black color
+    iFilledRectangle(0, 0, screenWidth, screenHeight); // fill the background
+    iShowImage(0, 0, "images\\front page.png");
+    iSetColor (255, 255, 0); // yellow color for text
+    iText(92, 52, "Press F1 to stop/start Music", GLUT_BITMAP_TIMES_ROMAN_24);
+    iText(655, 52, "PRESS Esc to go back", GLUT_BITMAP_TIMES_ROMAN_24);
+}
 void drawLevelSelectionPage(){
     iSetColor(0, 255, 0);
     iFilledRectangle(0, 0, screenWidth, screenHeight);
@@ -1763,9 +1718,14 @@ void drawLevelSelectionPage(){
     iSetColor(255, 255, 255);
     iText(75, 490, "SELECT DIFFICULTY:", GLUT_BITMAP_TIMES_ROMAN_24);
 }
+void drawEnterNamePage(){
+    iSetColor(255, 255, 255);
+    iFilledRectangle(0, 0, screenWidth, screenHeight);
+    iShowImage(0, 0, "images\\EnterNamePage.jpeg");
+    iText(inputBoxX, inputBoxY - 10, playerName, GLUT_BITMAP_TIMES_ROMAN_24);
 
 
-
+}
 void drawInstructions()
 {
     iSetColor(0, 0, 0); // black color
@@ -1805,7 +1765,6 @@ void drawAbout()
     iText(100, 150, "BUET", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 100, "Version: 1.0", GLUT_BITMAP_TIMES_ROMAN_24);
     iText(100, 50, "Thank you for playing!", GLUT_BITMAP_TIMES_ROMAN_24);
-    
 
 }
 void drawMenuPage()
@@ -1829,11 +1788,13 @@ void drawExit()
     exit(0);
 }
 
+
+
 int main(int argc, char *argv[])
 {
     PlaySound("music\\menuMusic.wav", NULL, SND_LOOP | SND_ASYNC);
     glutInit(&argc, argv);
-    iSetTimer(25, updatePacmanMovement);
+    iSetTimer(25, movePacman);
     iSetTimer(16, drawPacman);
     iSetTimer(25, updateGhostMovement);
     // place your own initialization codes here.
